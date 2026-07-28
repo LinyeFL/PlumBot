@@ -421,6 +421,14 @@ public class VelocityConfig {
                         "server-switch-enabled",
                         true
                 );
+        
+        Config.messages.Notifications
+                .pluginStatusEnabled =
+                getBoolean(
+                        notificationsMap,
+                        "plugin-status-enabled",
+                        false
+                );
 
         Config.messages.Notifications.join =
                 getString(
