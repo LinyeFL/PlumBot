@@ -228,11 +228,11 @@ public class QQEvent {
             if (matcher.find()){
                 String useMsg = smsg.replaceAll("\\[CQ:.*]", "");
                 String sendMsg = "§6" + "[" + groupName + "]" + "§a" + name + "§f" + ":" + useMsg;
-                plugin.getServer().getAllServers().forEach(server -> {server.sendMessage(SERIALIZER.deserialize(sendMsg));});
+                plugin.getServer().getAllPlayers().forEach(player -> {player.sendMessage(SERIALIZER.deserialize(sendMsg));});
                 return;
             }
             String message = "§6" + "[" + groupName + "]" + "§a" + name + "§f" + ":" + smsg;
-            plugin.getServer().getAllServers().forEach(server -> {server.sendMessage(SERIALIZER.deserialize(message));});
+            plugin.getServer().getAllPlayers().forEach(player -> {player.sendMessage(SERIALIZER.deserialize(message));});
             return;
         }
 
@@ -244,11 +244,11 @@ public class QQEvent {
             if (matcher.find()){
                 String useMsg = smsg.replaceAll("\\[CQ:.*]", "");
                 String sendMsg = "§6" + "[" + groupName + "]" + "§a" + name + "§f" + ":" + useMsg;
-                plugin.getServer().getAllServers().forEach(server -> {server.sendMessage(SERIALIZER.deserialize(sendMsg));});
+                plugin.getServer().getAllPlayers().forEach(player -> {player.sendMessage(SERIALIZER.deserialize(sendMsg));});
                 return;
             }
             String message = "§6" + "[" + groupName + "]" + "§a" + name + "§f" + ":" + smsg;
-            plugin.getServer().getAllServers().forEach(server -> {server.sendMessage(SERIALIZER.deserialize(message));});
+            plugin.getServer().getAllPlayers().forEach(player -> {player.sendMessage(SERIALIZER.deserialize(message));});
         }
 
 
