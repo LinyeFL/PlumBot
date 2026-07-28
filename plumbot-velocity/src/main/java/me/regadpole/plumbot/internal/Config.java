@@ -50,6 +50,7 @@ public class Config {
         public static class Notifications {
             public static boolean joinQuitEnabled;
             public static boolean serverSwitchEnabled;
+            public static boolean pluginStatusEnabled;
             public static String join;
             public static String quit;
             public static String switchServer;
