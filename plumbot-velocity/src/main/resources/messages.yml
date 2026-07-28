@@ -1,14 +1,24 @@
 # Velocity 子服务器显示名称。
-# 未列出的服务器会直接使用 Velocity 中注册的原始服务器名。
+# 未列出的服务器直接使用 Velocity 注册的原始服务器名。
 Servers:
   lobby: "登录服"
   survival: "生存服"
   redstone: "红石服"
 
-# Minecraft 聊天转发到 QQ/KOOK 时使用的格式。
+# MC 消息转发至 QQ／KOOK 时使用的格式。
 # 可用变量：{server}、{player}、{message}
 Chat:
   format: "[{server}] {player}：{message}"
+
+# QQ 消息显示在 MC 中的设置。
+QQ:
+  # QQ 群号与简称映射。
+  # 未配置的群会自动使用真实群名。
+  groups:
+    "439393246": "白叶群"
+
+  # 可用变量：{group}、{player}、{message}
+  format: "[{group}] {player}：{message}"
 
 Notifications:
   # 控制首次进入代理网络及彻底离开代理网络的通知。
@@ -16,7 +26,7 @@ Notifications:
 
   # 单独控制代理网络内跨子服通知。
   server-switch-enabled: true
-  
+
   # 控制 PlumBot 启动和关闭状态通知。
   plugin-status-enabled: false
 
