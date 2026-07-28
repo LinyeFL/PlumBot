@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class VelocityConfig {
     private static VelocityConfig Instance;
@@ -400,6 +399,44 @@ public class VelocityConfig {
                         "[{server}] {player}：{message}"
                 );
 
+        Map<String, Object> qqMap =
+                getMap(messagesObj, "QQ");
+
+        Config.messages.QQ.groups =
+                new HashMap<>();
+
+        Object qqGroupsValue =
+                qqMap.get("groups");
+
+        if (qqGroupsValue instanceof Map<?, ?>) {
+            Map<?, ?> qqGroupsMap =
+                    (Map<?, ?>) qqGroupsValue;
+
+            for (Map.Entry<?, ?> entry
+                    : qqGroupsMap.entrySet()) {
+
+                if (entry.getKey() != null
+                        && entry.getValue() != null) {
+
+                    Config.messages.QQ.groups.put(
+                            String.valueOf(
+                                    entry.getKey()
+                            ),
+                            String.valueOf(
+                                    entry.getValue()
+                            )
+                    );
+                }
+            }
+        }
+
+        Config.messages.QQ.format =
+                getString(
+                        qqMap,
+                        "format",
+                        "[{group}] {player}：{message}"
+                );
+
         Map<String, Object> notificationsMap =
                 getMap(
                         messagesObj,
@@ -421,7 +458,7 @@ public class VelocityConfig {
                         "server-switch-enabled",
                         true
                 );
-        
+
         Config.messages.Notifications
                 .pluginStatusEnabled =
                 getBoolean(
