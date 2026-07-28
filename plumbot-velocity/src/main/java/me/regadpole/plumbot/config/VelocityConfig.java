@@ -45,12 +45,13 @@ public class VelocityConfig {
         File botFile = new File(plugin.getDataFolder(), "bot.yml");
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         File returnsFile = new File(plugin.getDataFolder(), "returns.yml");
+        File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
         File kook = new File(plugin.getDataFolder(), "kook");
         File kookConf = new File(kook, "kbc.yml");
         File kookPlu = new File(kook, "plugins");
 
         if(!Config.PluginDir.exists() && !Config.PluginDir.mkdirs()) throw new RuntimeException("Failed to create data folder!");
-        File[] allFile = {botFile,configFile,returnsFile};
+        File[] allFile = {botFile, configFile, returnsFile, messagesFile};
         for (File file : allFile) {
             if (!file.exists()) {
                 try (InputStream is = plugin.getClass().getResourceAsStream("/" + file.getName())) {
@@ -76,12 +77,17 @@ public class VelocityConfig {
         InputStream botIs = new FileInputStream(botFile);
         InputStream configIs = new FileInputStream(configFile);
         InputStream returnsIs = new FileInputStream(returnsFile);
+        InputStream messagesIs = new FileInputStream(messagesFile);
 
         Yaml yaml = new Yaml();
 
         Map<String, Object> botObj = yaml.load(botIs);
         Map<String, Object> configObj = yaml.load(configIs);
         Map<String, Object> returnsObj = yaml.load(returnsIs);
+        Object loadedMessages = yaml.load(messagesIs);
+        Map<String, Object> messagesObj = loadedMessages instanceof Map
+            ? (Map<String, Object>) loadedMessages
+               : new HashMap<>();
         this.returnsObj = returnsObj;
 
         Config.bot.Ver = !Objects.isNull(botObj.get("Ver")) ? String.valueOf(botObj.get("Ver")) : "1.0";
