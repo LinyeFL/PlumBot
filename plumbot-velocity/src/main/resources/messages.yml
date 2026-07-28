@@ -1,0 +1,27 @@
+# Velocity 子服务器显示名称。
+# 未列出的服务器会直接使用 Velocity 中注册的原始服务器名。
+Servers:
+  lobby: "登录服"
+  survival: "生存服"
+  redstone: "红石服"
+
+# Minecraft 聊天转发到 QQ/KOOK 时使用的格式。
+# 可用变量：{server}、{player}、{message}
+Chat:
+  format: "[{server}] {player}：{message}"
+
+Notifications:
+  # 控制首次进入代理网络及彻底离开代理网络的通知。
+  join-quit-enabled: true
+
+  # 单独控制代理网络内跨子服通知。
+  server-switch-enabled: true
+
+  # 可用变量：{player}、{server}
+  join: "玩家 {player} 进入服务器"
+
+  # 可用变量：{player}
+  quit: "玩家 {player} 离开服务器"
+
+  # 可用变量：{player}、{from_server}、{to_server}
+  switch: "玩家 {player} 从 {from_server} 前往 {to_server}"
