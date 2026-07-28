@@ -24,6 +24,23 @@ public class VelocityConfig {
         Config.PluginDir = plugin.getDataFolder();
     }
 
+    private static List<Long> toLongList(Object obj) {
+        List<Long> result = new ArrayList<>();
+        if (obj instanceof List<?>) {
+            for (Object o : (List<?>) obj) {
+                if (o instanceof Number) {
+                    result.add(((Number) o).longValue());
+                } else if (o != null) {
+                    try {
+                        result.add(Long.parseLong(String.valueOf(o).trim()));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     public void loadConfig() throws IOException {
         File botFile = new File(plugin.getDataFolder(), "bot.yml");
         File configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -77,8 +94,8 @@ public class VelocityConfig {
         Config.bot.Bot.gocqhttp.ListenPort = !Objects.isNull(cqMap.get("ListenPort")) ? Integer.parseInt(String.valueOf(cqMap.get("ListenPort"))) : 5701;
         Map<String, Object> kookMap = !Objects.isNull(botMap.get("Kook")) ? (Map<String, Object>) botMap.get("Kook") : new HashMap<>();
         Config.bot.Bot.kook.Token = !Objects.isNull(kookMap.get("Token")) ? String.valueOf(kookMap.get("Token")) : "";
-        Config.bot.Groups = !Objects.isNull(botObj.get("Groups")) ? (List<Long>) botObj.get("Groups") : new ArrayList<>();
-        Config.bot.Admins = !Objects.isNull(botObj.get("Admins")) ? (List<Long>) botObj.get("Admins") : new ArrayList<>();
+        Config.bot.Groups = toLongList(botObj.get("Groups"));
+        Config.bot.Admins = toLongList(botObj.get("Admins"));
 
         Config.config.Ver = !Objects.isNull(configObj.get("Ver")) ? String.valueOf(configObj.get("Ver")) : "1.0";
         Map<String, Object> forwardingMap = !Objects.isNull(configObj.get("Forwarding")) ? (Map<String, Object>) configObj.get("Forwarding") : new HashMap<>();
@@ -149,7 +166,7 @@ public class VelocityConfig {
         Instance.loadConfig();
     }
 
-/*    public static YamlConfiguration getBotYaml(){
+/* public static YamlConfiguration getBotYaml(){
         return bot;
     }
 
