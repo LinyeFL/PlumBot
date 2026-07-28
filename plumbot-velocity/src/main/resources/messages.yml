@@ -16,6 +16,9 @@ Notifications:
 
   # 单独控制代理网络内跨子服通知。
   server-switch-enabled: true
+  
+  # 控制 PlumBot 启动和关闭状态通知。
+  plugin-status-enabled: false
 
   # 可用变量：{player}、{server}
   join: "玩家 {player} 进入服务器"
