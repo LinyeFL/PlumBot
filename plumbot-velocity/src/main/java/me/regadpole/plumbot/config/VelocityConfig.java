@@ -11,14 +11,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class VelocityConfig {
     private static VelocityConfig Instance;
+
     private final PlumBot plugin;
     private Map<String, Object> returnsObj;
 
-    public VelocityConfig(PlumBot plugin){
+    public VelocityConfig(PlumBot plugin) {
         Instance = this;
         this.plugin = plugin;
         Config.PluginDir = plugin.getDataFolder();
@@ -26,37 +31,96 @@ public class VelocityConfig {
 
     private static List<Long> toLongList(Object obj) {
         List<Long> result = new ArrayList<>();
+
         if (obj instanceof List<?>) {
-            for (Object o : (List<?>) obj) {
-                if (o instanceof Number) {
-                    result.add(((Number) o).longValue());
-                } else if (o != null) {
+            for (Object value : (List<?>) obj) {
+                if (value instanceof Number) {
+                    result.add(((Number) value).longValue());
+                } else if (value != null) {
                     try {
-                        result.add(Long.parseLong(String.valueOf(o).trim()));
+                        result.add(
+                                Long.parseLong(
+                                        String.valueOf(value).trim()
+                                )
+                        );
                     } catch (NumberFormatException ignored) {
                     }
                 }
             }
         }
+
         return result;
     }
 
     public void loadConfig() throws IOException {
-        File botFile = new File(plugin.getDataFolder(), "bot.yml");
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        File returnsFile = new File(plugin.getDataFolder(), "returns.yml");
-        File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
-        File kook = new File(plugin.getDataFolder(), "kook");
-        File kookConf = new File(kook, "kbc.yml");
-        File kookPlu = new File(kook, "plugins");
+        File botFile = new File(
+                plugin.getDataFolder(),
+                "bot.yml"
+        );
 
-        if(!Config.PluginDir.exists() && !Config.PluginDir.mkdirs()) throw new RuntimeException("Failed to create data folder!");
-        File[] allFile = {botFile, configFile, returnsFile, messagesFile};
+        File configFile = new File(
+                plugin.getDataFolder(),
+                "config.yml"
+        );
+
+        File returnsFile = new File(
+                plugin.getDataFolder(),
+                "returns.yml"
+        );
+
+        File messagesFile = new File(
+                plugin.getDataFolder(),
+                "messages.yml"
+        );
+
+        File kook = new File(
+                plugin.getDataFolder(),
+                "kook"
+        );
+
+        File kookConf = new File(
+                kook,
+                "kbc.yml"
+        );
+
+        File kookPlu = new File(
+                kook,
+                "plugins"
+        );
+
+        if (!Config.PluginDir.exists()
+                && !Config.PluginDir.mkdirs()) {
+            throw new RuntimeException(
+                    "Failed to create data folder!"
+            );
+        }
+
+        File[] allFile = {
+                botFile,
+                configFile,
+                returnsFile,
+                messagesFile
+        };
+
         for (File file : allFile) {
             if (!file.exists()) {
-                try (InputStream is = plugin.getClass().getResourceAsStream("/" + file.getName())) {
-                    assert is != null;
-                    Files.copy(is, file.toPath());
+                try (InputStream inputStream =
+                             plugin.getClass()
+                                     .getResourceAsStream(
+                                             "/" + file.getName()
+                                     )) {
+
+                    if (inputStream == null) {
+                        throw new IOException(
+                                "Missing bundled resource: "
+                                        + file.getName()
+                        );
+                    }
+
+                    Files.copy(
+                            inputStream,
+                            file.toPath()
+                    );
                 }
             }
         }
@@ -64,103 +128,559 @@ public class VelocityConfig {
         if (!kook.exists()) {
             kook.mkdirs();
         }
+
         if (!kookPlu.exists()) {
             kookPlu.mkdirs();
         }
+
         if (!kookConf.exists()) {
-            try (InputStream is = plugin.getClass().getResourceAsStream("/" + kookConf.getParentFile().getName() + "/" + kookConf.getName())) {
-                assert is != null;
-                Files.copy(is, kookConf.toPath());
+            String resourcePath =
+                    "/"
+                            + kookConf.getParentFile().getName()
+                            + "/"
+                            + kookConf.getName();
+
+            try (InputStream inputStream =
+                         plugin.getClass()
+                                 .getResourceAsStream(resourcePath)) {
+
+                if (inputStream == null) {
+                    throw new IOException(
+                            "Missing bundled resource: "
+                                    + resourcePath
+                    );
+                }
+
+                Files.copy(
+                        inputStream,
+                        kookConf.toPath()
+                );
             }
         }
 
-        InputStream botIs = new FileInputStream(botFile);
-        InputStream configIs = new FileInputStream(configFile);
-        InputStream returnsIs = new FileInputStream(returnsFile);
-        InputStream messagesIs = new FileInputStream(messagesFile);
+        try (
+                InputStream botIs =
+                        new FileInputStream(botFile);
 
-        Yaml yaml = new Yaml();
+                InputStream configIs =
+                        new FileInputStream(configFile);
 
-        Map<String, Object> botObj = yaml.load(botIs);
-        Map<String, Object> configObj = yaml.load(configIs);
-        Map<String, Object> returnsObj = yaml.load(returnsIs);
-        Object loadedMessages = yaml.load(messagesIs);
-        Map<String, Object> messagesObj = loadedMessages instanceof Map
-            ? (Map<String, Object>) loadedMessages
-               : new HashMap<>();
-        this.returnsObj = returnsObj;
+                InputStream returnsIs =
+                        new FileInputStream(returnsFile);
 
-        Config.bot.Ver = !Objects.isNull(botObj.get("Ver")) ? String.valueOf(botObj.get("Ver")) : "1.0";
-        Map<String, Object> botMap = !Objects.isNull(botObj.get("Bot")) ? (Map<String, Object>) botObj.get("Bot") : new HashMap<>();
-        Config.bot.Bot.Mode = !Objects.isNull(botMap.get("Mode")) ? String.valueOf(botMap.get("Mode")).toLowerCase() : "go-cqhttp";
-        Map<String, Object> cqMap = !Objects.isNull(botMap.get("go-cqhttp")) ? (Map<String, Object>) botMap.get("go-cqhttp") : new HashMap<>();
-        Config.bot.Bot.gocqhttp.HTTP = !Objects.isNull(cqMap.get("Http")) ? String.valueOf(cqMap.get("Http")) : "http://127.0.0.1:5700";
-        Config.bot.Bot.gocqhttp.Token = !Objects.isNull(cqMap.get("Token")) ? String.valueOf(cqMap.get("Token")) : "";
-        Config.bot.Bot.gocqhttp.IsAccessToken = !Objects.isNull(cqMap.get("IsAccessToken")) ? Boolean.parseBoolean(String.valueOf(cqMap.get("IsAccessToken"))) : false;
-        Config.bot.Bot.gocqhttp.ListenPort = !Objects.isNull(cqMap.get("ListenPort")) ? Integer.parseInt(String.valueOf(cqMap.get("ListenPort"))) : 5701;
-        Map<String, Object> kookMap = !Objects.isNull(botMap.get("Kook")) ? (Map<String, Object>) botMap.get("Kook") : new HashMap<>();
-        Config.bot.Bot.kook.Token = !Objects.isNull(kookMap.get("Token")) ? String.valueOf(kookMap.get("Token")) : "";
-        Config.bot.Groups = toLongList(botObj.get("Groups"));
-        Config.bot.Admins = toLongList(botObj.get("Admins"));
+                InputStream messagesIs =
+                        new FileInputStream(messagesFile)
+        ) {
+            Yaml yaml = new Yaml();
 
-        Config.config.Ver = !Objects.isNull(configObj.get("Ver")) ? String.valueOf(configObj.get("Ver")) : "1.0";
-        Map<String, Object> forwardingMap = !Objects.isNull(configObj.get("Forwarding")) ? (Map<String, Object>) configObj.get("Forwarding") : new HashMap<>();
-        Config.config.Forwarding.enable = !Objects.isNull(forwardingMap.get("enable")) ? Boolean.parseBoolean(String.valueOf(forwardingMap.get("enable"))) : true;
-        Config.config.Forwarding.mode = !Objects.isNull(forwardingMap.get("mode")) ? Integer.parseInt(String.valueOf(forwardingMap.get("mode"))) : 0;
-        Config.config.Forwarding.prefix = !Objects.isNull(forwardingMap.get("prefix")) ? String.valueOf(forwardingMap.get("prefix")) : "#";
-        Map<String, Object> wlMap = !Objects.isNull(configObj.get("WhiteList")) ? (Map<String, Object>) configObj.get("WhiteList") : new HashMap<>();
-        Config.config.WhiteList.enable = !Objects.isNull(configObj.get("enable")) ? Boolean.parseBoolean(String.valueOf(wlMap.get("enable"))) : false;
-        Config.config.WhiteList.kickMsg = !Objects.isNull(configObj.get("kickMsg")) ? String.valueOf(wlMap.get("kickMsg")) : "请加入qq群:xxx申请白名单";
-        Config.config.JoinAndLeave = !Objects.isNull(configObj.get("JoinAndLeave")) ? Boolean.parseBoolean(String.valueOf(configObj.get("JoinAndLeave"))) : false;
-        Config.config.Online = !Objects.isNull(configObj.get("Online")) ? Boolean.parseBoolean(String.valueOf(configObj.get("Online"))) : false;
-        Config.config.SDR = !Objects.isNull(configObj.get("SDR")) ? Boolean.parseBoolean(String.valueOf(configObj.get("SDR"))) : false;
-        Config.config.Maven = !Objects.isNull(configObj.get("Maven")) ? String.valueOf(configObj.get("Maven")) : "https://repo1.maven.org/maven2";
+            Map<String, Object> botObj =
+                    loadMap(yaml, botIs);
 
-        Map<String, Object> dbMap = !Objects.isNull(configObj.get("database")) ? (Map<String, Object>) configObj.get("database") : new HashMap<>();
-        DbConfig.type = !Objects.isNull(dbMap.get("type")) ? String.valueOf(dbMap.get("type")) : "sqlite";
-        Map<String, Object> dbsettingsMap = !Objects.isNull(dbMap.get("settings")) ? (Map<String, Object>) dbMap.get("settings") : new HashMap<>();
-        Map<String, Object> sqliteMap = !Objects.isNull(dbsettingsMap.get("sqlite")) ? (Map<String, Object>) dbsettingsMap.get("sqlite") : new HashMap<>();
-        DbConfig.settings.sqlite.path = (!Objects.isNull(sqliteMap.get("path")) ? String.valueOf(sqliteMap.get("path")) : "%plugin_folder%/database.db").replace("%plugin_folder%", PlumBot.INSTANCE.getDataFolder().toPath().toString());
-        Map<String, Object> mysqlMap = !Objects.isNull(dbsettingsMap.get("mysql")) ? (Map<String, Object>) dbsettingsMap.get("mysql") : new HashMap<>();
-        DbConfig.settings.mysql.host = !Objects.isNull(mysqlMap.get("host")) ? String.valueOf(mysqlMap.get("host")) : "localhost";
-        DbConfig.settings.mysql.port = !Objects.isNull(mysqlMap.get("port")) ? String.valueOf(mysqlMap.get("port")) : "3306";
-        DbConfig.settings.mysql.database = !Objects.isNull(mysqlMap.get("database")) ? String.valueOf(mysqlMap.get("database")) : "plumbot";
-        DbConfig.settings.mysql.user = !Objects.isNull(mysqlMap.get("user")) ? String.valueOf(mysqlMap.get("user")) : "plumbot";
-        DbConfig.settings.mysql.password = !Objects.isNull(mysqlMap.get("password")) ? String.valueOf(mysqlMap.get("password")) : "plumbot";
-        DbConfig.settings.mysql.parameters = !Objects.isNull(mysqlMap.get("parameters")) ? String.valueOf(mysqlMap.get("parameters")) : "?useSSL=false";
-        Map<String, Object> poolMap = !Objects.isNull(dbsettingsMap.get("pool")) ? (Map<String, Object>) dbsettingsMap.get("pool") : new HashMap<>();
-        DbConfig.settings.pool.connectionTimeout = !Objects.isNull(poolMap.get("connectionTimeout")) ? Long.parseLong(String.valueOf(poolMap.get("connectionTimeout"))) : 30000;
-        DbConfig.settings.pool.idleTimeout = !Objects.isNull(poolMap.get("idleTimeout")) ? Long.parseLong(String.valueOf(poolMap.get("idleTimeout"))) : 600000;
-        DbConfig.settings.pool.maxLifetime = !Objects.isNull(poolMap.get("maxLifetime")) ? Long.parseLong(String.valueOf(poolMap.get("maxLifetime"))) : 1800000;
-        DbConfig.settings.pool.maximumPoolSize = !Objects.isNull(poolMap.get("maximumPoolSize")) ? Integer.parseInt(String.valueOf(poolMap.get("maximumPoolSize"))) : 15;
-        DbConfig.settings.pool.keepaliveTime = !Objects.isNull(poolMap.get("keepaliveTime")) ? Long.parseLong(String.valueOf(poolMap.get("keepaliveTime"))) : 0;
-        DbConfig.settings.pool.minimumIdle = !Objects.isNull(poolMap.get("minimumIdle")) ? Integer.parseInt(String.valueOf(poolMap.get("minimumIdle"))) : 5;
+            Map<String, Object> configObj =
+                    loadMap(yaml, configIs);
 
-        Config.returns.Ver = !Objects.isNull(returnsObj.get("Ver")) ? String.valueOf(returnsObj.get("Ver")) : "1.0";
+            Map<String, Object> loadedReturns =
+                    loadMap(yaml, returnsIs);
 
-        if (!"1.3.0".equals(Config.bot.Ver)){
-            try (InputStream is = plugin.getClass().getResourceAsStream("/" + botFile.getName())) {
-                botIs.close();
-                assert is != null;
-                Files.copy(is, botFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Instance.loadConfig();
+            Map<String, Object> messagesObj =
+                    loadMap(yaml, messagesIs);
+
+            this.returnsObj = loadedReturns;
+
+            loadBotConfig(botObj);
+            loadMainConfig(configObj);
+            loadMessagesConfig(messagesObj);
+            loadDatabaseConfig(configObj);
+
+            Config.returns.Ver = getString(
+                    loadedReturns,
+                    "Ver",
+                    "1.0"
+            );
+        }
+
+        if (!"1.3.0".equals(Config.bot.Ver)) {
+            replaceWithBundledResource(botFile);
+            Instance.loadConfig();
+            return;
+        }
+
+        if (!"1.2.2".equals(Config.config.Ver)) {
+            replaceWithBundledResource(configFile);
+            Instance.loadConfig();
+            return;
+        }
+
+        if (!"1.2".equals(Config.returns.Ver)) {
+            replaceWithBundledResource(returnsFile);
+            Instance.loadConfig();
+        }
+    }
+
+    private void loadBotConfig(
+            Map<String, Object> botObj
+    ) {
+        Config.bot.Ver = getString(
+                botObj,
+                "Ver",
+                "1.0"
+        );
+
+        Map<String, Object> botMap =
+                getMap(botObj, "Bot");
+
+        Config.bot.Bot.Mode = getString(
+                botMap,
+                "Mode",
+                "go-cqhttp"
+        ).toLowerCase();
+
+        Map<String, Object> cqMap =
+                getMap(botMap, "go-cqhttp");
+
+        Config.bot.Bot.gocqhttp.HTTP = getString(
+                cqMap,
+                "Http",
+                "http://127.0.0.1:5700"
+        );
+
+        Config.bot.Bot.gocqhttp.Token = getString(
+                cqMap,
+                "Token",
+                ""
+        );
+
+        Config.bot.Bot.gocqhttp.IsAccessToken =
+                getBoolean(
+                        cqMap,
+                        "IsAccessToken",
+                        false
+                );
+
+        Config.bot.Bot.gocqhttp.ListenPort =
+                getInteger(
+                        cqMap,
+                        "ListenPort",
+                        5701
+                );
+
+        Map<String, Object> kookMap =
+                getMap(botMap, "Kook");
+
+        Config.bot.Bot.kook.Token = getString(
+                kookMap,
+                "Token",
+                ""
+        );
+
+        Config.bot.Groups =
+                toLongList(botObj.get("Groups"));
+
+        Config.bot.Admins =
+                toLongList(botObj.get("Admins"));
+    }
+
+    private void loadMainConfig(
+            Map<String, Object> configObj
+    ) {
+        Config.config.Ver = getString(
+                configObj,
+                "Ver",
+                "1.0"
+        );
+
+        Map<String, Object> forwardingMap =
+                getMap(configObj, "Forwarding");
+
+        Config.config.Forwarding.enable =
+                getBoolean(
+                        forwardingMap,
+                        "enable",
+                        true
+                );
+
+        Config.config.Forwarding.mode =
+                getInteger(
+                        forwardingMap,
+                        "mode",
+                        0
+                );
+
+        Config.config.Forwarding.prefix =
+                getString(
+                        forwardingMap,
+                        "prefix",
+                        "#"
+                );
+
+        Map<String, Object> whiteListMap =
+                getMap(configObj, "WhiteList");
+
+        Config.config.WhiteList.enable =
+                getBoolean(
+                        whiteListMap,
+                        "enable",
+                        false
+                );
+
+        Config.config.WhiteList.kickMsg =
+                getString(
+                        whiteListMap,
+                        "kickMsg",
+                        "请加入 QQ 群申请白名单"
+                );
+
+        Config.config.JoinAndLeave =
+                getBoolean(
+                        configObj,
+                        "JoinAndLeave",
+                        false
+                );
+
+        Config.config.Online =
+                getBoolean(
+                        configObj,
+                        "Online",
+                        false
+                );
+
+        Config.config.SDR =
+                getBoolean(
+                        configObj,
+                        "SDR",
+                        false
+                );
+
+        Config.config.Maven =
+                getString(
+                        configObj,
+                        "Maven",
+                        "https://repo1.maven.org/maven2"
+                );
+    }
+
+    private void loadMessagesConfig(
+            Map<String, Object> messagesObj
+    ) {
+        Config.messages.Servers =
+                new HashMap<>();
+
+        Object serversValue =
+                messagesObj.get("Servers");
+
+        if (serversValue instanceof Map<?, ?>) {
+            Map<?, ?> serversMap =
+                    (Map<?, ?>) serversValue;
+
+            for (Map.Entry<?, ?> entry
+                    : serversMap.entrySet()) {
+
+                if (entry.getKey() != null
+                        && entry.getValue() != null) {
+
+                    Config.messages.Servers.put(
+                            String.valueOf(
+                                    entry.getKey()
+                            ),
+                            String.valueOf(
+                                    entry.getValue()
+                            )
+                    );
+                }
             }
         }
-        if (!Config.config.Ver.equals("1.2.2")){
-            try (InputStream is = plugin.getClass().getResourceAsStream("/" + configFile.getName())) {
-                configIs.close();
-                assert is != null;
-                Files.copy(is, configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Instance.loadConfig();
-            }
+
+        Map<String, Object> chatMap =
+                getMap(messagesObj, "Chat");
+
+        Config.messages.Chat.format =
+                getString(
+                        chatMap,
+                        "format",
+                        "[{server}] {player}：{message}"
+                );
+
+        Map<String, Object> notificationsMap =
+                getMap(
+                        messagesObj,
+                        "Notifications"
+                );
+
+        Config.messages.Notifications
+                .joinQuitEnabled =
+                getBoolean(
+                        notificationsMap,
+                        "join-quit-enabled",
+                        true
+                );
+
+        Config.messages.Notifications
+                .serverSwitchEnabled =
+                getBoolean(
+                        notificationsMap,
+                        "server-switch-enabled",
+                        true
+                );
+
+        Config.messages.Notifications.join =
+                getString(
+                        notificationsMap,
+                        "join",
+                        "玩家 {player} 进入服务器"
+                );
+
+        Config.messages.Notifications.quit =
+                getString(
+                        notificationsMap,
+                        "quit",
+                        "玩家 {player} 离开服务器"
+                );
+
+        Config.messages.Notifications.switchServer =
+                getString(
+                        notificationsMap,
+                        "switch",
+                        "玩家 {player} 从 {from_server} 前往 {to_server}"
+                );
+    }
+
+    private void loadDatabaseConfig(
+            Map<String, Object> configObj
+    ) {
+        Map<String, Object> databaseMap =
+                getMap(configObj, "database");
+
+        DbConfig.type = getString(
+                databaseMap,
+                "type",
+                "sqlite"
+        );
+
+        Map<String, Object> settingsMap =
+                getMap(databaseMap, "settings");
+
+        Map<String, Object> sqliteMap =
+                getMap(settingsMap, "sqlite");
+
+        DbConfig.settings.sqlite.path =
+                getString(
+                        sqliteMap,
+                        "path",
+                        "%plugin_folder%/database.db"
+                ).replace(
+                        "%plugin_folder%",
+                        PlumBot.INSTANCE
+                                .getDataFolder()
+                                .toPath()
+                                .toString()
+                );
+
+        Map<String, Object> mysqlMap =
+                getMap(settingsMap, "mysql");
+
+        DbConfig.settings.mysql.host =
+                getString(
+                        mysqlMap,
+                        "host",
+                        "localhost"
+                );
+
+        DbConfig.settings.mysql.port =
+                getString(
+                        mysqlMap,
+                        "port",
+                        "3306"
+                );
+
+        DbConfig.settings.mysql.database =
+                getString(
+                        mysqlMap,
+                        "database",
+                        "plumbot"
+                );
+
+        DbConfig.settings.mysql.user =
+                getString(
+                        mysqlMap,
+                        "user",
+                        "plumbot"
+                );
+
+        DbConfig.settings.mysql.password =
+                getString(
+                        mysqlMap,
+                        "password",
+                        "plumbot"
+                );
+
+        DbConfig.settings.mysql.parameters =
+                getString(
+                        mysqlMap,
+                        "parameters",
+                        "?useSSL=false"
+                );
+
+        Map<String, Object> poolMap =
+                getMap(settingsMap, "pool");
+
+        DbConfig.settings.pool.connectionTimeout =
+                getLong(
+                        poolMap,
+                        "connectionTimeout",
+                        30000L
+                );
+
+        DbConfig.settings.pool.idleTimeout =
+                getLong(
+                        poolMap,
+                        "idleTimeout",
+                        600000L
+                );
+
+        DbConfig.settings.pool.maxLifetime =
+                getLong(
+                        poolMap,
+                        "maxLifetime",
+                        1800000L
+                );
+
+        DbConfig.settings.pool.maximumPoolSize =
+                getInteger(
+                        poolMap,
+                        "maximumPoolSize",
+                        15
+                );
+
+        DbConfig.settings.pool.keepaliveTime =
+                getLong(
+                        poolMap,
+                        "keepaliveTime",
+                        0L
+                );
+
+        DbConfig.settings.pool.minimumIdle =
+                getInteger(
+                        poolMap,
+                        "minimumIdle",
+                        5
+                );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> loadMap(
+            Yaml yaml,
+            InputStream inputStream
+    ) {
+        Object loaded = yaml.load(inputStream);
+
+        if (loaded instanceof Map<?, ?>) {
+            return (Map<String, Object>) loaded;
         }
-        if (!Config.returns.Ver.equals("1.2")){
-            try (InputStream is = plugin.getClass().getResourceAsStream("/" + returnsFile.getName())) {
-                returnsIs.close();
-                assert is != null;
-                Files.copy(is, returnsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Instance.loadConfig();
+
+        return new HashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> getMap(
+            Map<String, Object> parent,
+            String key
+    ) {
+        Object value = parent.get(key);
+
+        if (value instanceof Map<?, ?>) {
+            return (Map<String, Object>) value;
+        }
+
+        return new HashMap<>();
+    }
+
+    private static String getString(
+            Map<String, Object> parent,
+            String key,
+            String defaultValue
+    ) {
+        Object value = parent.get(key);
+
+        return value == null
+                ? defaultValue
+                : String.valueOf(value);
+    }
+
+    private static boolean getBoolean(
+            Map<String, Object> parent,
+            String key,
+            boolean defaultValue
+    ) {
+        Object value = parent.get(key);
+
+        return value == null
+                ? defaultValue
+                : Boolean.parseBoolean(
+                        String.valueOf(value)
+                );
+    }
+
+    private static int getInteger(
+            Map<String, Object> parent,
+            String key,
+            int defaultValue
+    ) {
+        Object value = parent.get(key);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        try {
+            return Integer.parseInt(
+                    String.valueOf(value)
+            );
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
+    }
+
+    private static long getLong(
+            Map<String, Object> parent,
+            String key,
+            long defaultValue
+    ) {
+        Object value = parent.get(key);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        try {
+            return Long.parseLong(
+                    String.valueOf(value)
+            );
+        } catch (NumberFormatException exception) {
+            return defaultValue;
+        }
+    }
+
+    private void replaceWithBundledResource(
+            File targetFile
+    ) throws IOException {
+        try (InputStream inputStream =
+                     plugin.getClass()
+                             .getResourceAsStream(
+                                     "/" + targetFile.getName()
+                             )) {
+
+            if (inputStream == null) {
+                throw new IOException(
+                        "Missing bundled resource: "
+                                + targetFile.getName()
+                );
             }
+
+            Files.copy(
+                    inputStream,
+                    targetFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
         }
     }
 
@@ -168,20 +688,8 @@ public class VelocityConfig {
         return returnsObj;
     }
 
-    public static void reloadConfig() throws IOException {
+    public static void reloadConfig()
+            throws IOException {
         Instance.loadConfig();
     }
-
-/* public static YamlConfiguration getBotYaml(){
-        return bot;
-    }
-
-    public static YamlConfiguration getConfigYaml() {
-        return config;
-    }
-
-    public static YamlConfiguration getReturnsYaml() {return returns;}
-
-    public static YamlConfiguration getCommandsYaml() {return commands;}*/
-
 }
