@@ -17,7 +17,7 @@ QQ:
   #   123456789: "白叶群"
 
   # 可用变量：{group}、{player}、{message}
-  # 支持 MiniMessage 标签：<gold>、<green>、<white>、<bold> 等。
+  # 支持 & 颜色码：&6=金色 &a=绿色 &f=白色 &r=重置 等
   format: "&6[{group}]&r &a{player}&r&f：&r{message}"
 
   # 屏蔽 QQ 官方 BOT 消息（true=屏蔽，false=转发）
@@ -27,6 +27,14 @@ QQ:
   # 官方 BOT 的 QQ 号可以在这里手动添加
   filter-bot-ids:
     - 123456789
+
+  # 群级别开关（默认全开，未列出的群默认全开）
+  # 可通过群内指令 /转发 开|关 和 /通知 开|关 修改，自动持久化
+  group-switches:
+    # 示例：
+    # 123456789:
+    #   forward: true
+    #   notify: true
 
 Notifications:
   # 控制首次进入代理网络及彻底离开代理网络的通知。
