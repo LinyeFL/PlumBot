@@ -21,6 +21,7 @@ public class VelocityConfig {
 
     private final PlumBot plugin;
     private Map<String, Object> returnsObj;
+    private Map<String, Object> messagesObj;
 
     public VelocityConfig(PlumBot plugin) {
         Instance = this;
@@ -185,6 +186,7 @@ public class VelocityConfig {
                     loadMap(yaml, messagesIs);
 
             this.returnsObj = loadedReturns;
+            this.messagesObj = messagesObj;
 
             loadBotConfig(botObj);
             loadMainConfig(configObj);
@@ -731,6 +733,10 @@ public class VelocityConfig {
 
     public Map<String, Object> getReturnsObj() {
         return returnsObj;
+    }
+
+    public Map<String, Object> getMessagesObj() {
+        return messagesObj;
     }
 
     public static void reloadConfig()
