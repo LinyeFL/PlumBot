@@ -87,7 +87,7 @@ public class VelocityConfig {
         Config.config.Forwarding.prefix = !Objects.isNull(forwardingMap.get("prefix")) ? String.valueOf(forwardingMap.get("prefix")) : "#";
         Map<String, Object> wlMap = !Objects.isNull(configObj.get("WhiteList")) ? (Map<String, Object>) configObj.get("WhiteList") : new HashMap<>();
         Config.config.WhiteList.enable = !Objects.isNull(configObj.get("enable")) ? Boolean.parseBoolean(String.valueOf(wlMap.get("enable"))) : false;
-        Config.config.WhiteList.kickMsg = !Objects.isNull(configObj.get("kickMsg")) ? String.valueOf(wlMap.get("kickMsg")) : "请加入qq群:xxx申请白名单";
+        Config.config.WhiteList.kickMsg = !Objects.isNull(wlMap.get("kickMsg")) ? String.valueOf(wlMap.get("kickMsg")) : "请加入qq群:xxx申请白名单";
         Config.config.JoinAndLeave = !Objects.isNull(configObj.get("JoinAndLeave")) ? Boolean.parseBoolean(String.valueOf(configObj.get("JoinAndLeave"))) : false;
         Config.config.Online = !Objects.isNull(configObj.get("Online")) ? Boolean.parseBoolean(String.valueOf(configObj.get("Online"))) : false;
         Config.config.SDR = !Objects.isNull(configObj.get("SDR")) ? Boolean.parseBoolean(String.valueOf(configObj.get("SDR"))) : false;
