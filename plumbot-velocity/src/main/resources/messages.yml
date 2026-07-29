@@ -10,15 +10,18 @@ Servers:
 Chat:
   format: "[{server}] {player}：{message}"
 
-# QQ 消息显示在 MC 中的设置。
+# QQ→MC 消息显示。
 QQ:
-  # QQ 群号与简称映射。
-  # 未配置的群会自动使用真实群名。
-  groups:
-    "439393246": "白叶群"
+  # QQ 群号到简称的映射，未配置时使用真实群名。
+  # groups:
+  #   123456789: "白叶群"
 
   # 可用变量：{group}、{player}、{message}
-  format: "[{group}] {player}：{message}"
+  # 支持 MiniMessage 标签：<gold>、<green>、<white>、<bold> 等。
+  format: "<gold>[{group}]</gold> <green>{player}</green><white>：</white>{message}"
+
+  # 可选：填写机器人自身 QQ 号后，该 QQ 号发出的消息不会转发到 MC。
+  bot-qq-id: 0
 
 Notifications:
   # 控制首次进入代理网络及彻底离开代理网络的通知。
