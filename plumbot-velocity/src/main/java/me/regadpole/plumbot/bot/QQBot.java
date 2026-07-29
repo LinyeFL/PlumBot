@@ -331,4 +331,25 @@ public class QQBot implements Bot {
 
         return false;
     }
+
+    public String getGroupMemberName(long groupId, long qq) {
+        try {
+            List<GroupMemberInfo> members = client.getGroupMemberList(groupId);
+            for (GroupMemberInfo member : members) {
+                if (member.getUserId().equals(qq)) {
+                    String card = member.getCard();
+                    if (card != null && !card.isEmpty()) {
+                        return card;
+                    }
+                    String nickname = member.getNickname();
+                    if (nickname != null && !nickname.isEmpty()) {
+                        return nickname;
+                    }
+                    return String.valueOf(qq);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return String.valueOf(qq);
+    }
 }
