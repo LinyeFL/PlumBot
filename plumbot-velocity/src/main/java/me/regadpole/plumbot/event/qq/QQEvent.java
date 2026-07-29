@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -81,21 +82,36 @@ public class QQEvent {
             return;
         }
 
-        List<String> playerNames = new ArrayList<>();
+        Map<String, List<String>> serverPlayers = new LinkedHashMap<>();
+        int total = 0;
+        for (Player player : plugin.getServer().getAllPlayers()) {
+            total++;
+            String serverName = player.getCurrentServer()
+                    .map(s -> s.getServerInfo().getName())
+                    .orElse("未知");
+            serverPlayers.computeIfAbsent(serverName, k -> new ArrayList<>())
+                    .add(player.getUsername());
+        }
 
-        for (Player player
-                : plugin.getServer().getAllPlayers()) {
-            playerNames.add(player.getUsername());
+        Map<String, String> serverAlias = new HashMap<>();
+        serverAlias.put("lobby", "登录服");
+        serverAlias.put("survival", "生存服");
+        serverAlias.put("redstone", "红石服");
+
+        List<String> lines = new ArrayList<>();
+        lines.add("当前总在线：(" + total + "人)");
+
+        for (Map.Entry<String, List<String>> entry : serverPlayers.entrySet()) {
+            String alias = serverAlias.getOrDefault(entry.getKey(), entry.getKey());
+            lines.add(alias + ": (" + entry.getValue().size() + "人)");
+            for (String name : entry.getValue()) {
+                lines.add(name);
+            }
         }
 
         PlumBot.getBot().sendMsg(
                 false,
-                "当前在线：("
-                        + plugin.getServer()
-                        .getAllPlayers()
-                        .size()
-                        + "人)"
-                        + playerNames,
+                String.join("\n", lines),
                 event.getUserId()
         );
     }
@@ -464,25 +480,36 @@ public class QQEvent {
                 return true;
             }
 
-            List<String> playerNames =
-                    new ArrayList<>();
+            Map<String, List<String>> serverPlayers = new LinkedHashMap<>();
+            int total = 0;
+            for (Player player : plugin.getServer().getAllPlayers()) {
+                total++;
+                String serverName = player.getCurrentServer()
+                        .map(s -> s.getServerInfo().getName())
+                        .orElse("未知");
+                serverPlayers.computeIfAbsent(serverName, k -> new ArrayList<>())
+                        .add(player.getUsername());
+            }
 
-            for (Player player
-                    : plugin.getServer()
-                    .getAllPlayers()) {
-                playerNames.add(
-                        player.getUsername()
-                );
+            Map<String, String> serverAlias = new HashMap<>();
+            serverAlias.put("lobby", "登录服");
+            serverAlias.put("survival", "生存服");
+            serverAlias.put("redstone", "红石服");
+
+            List<String> lines = new ArrayList<>();
+            lines.add("当前总在线：(" + total + "人)");
+
+            for (Map.Entry<String, List<String>> entry : serverPlayers.entrySet()) {
+                String alias = serverAlias.getOrDefault(entry.getKey(), entry.getKey());
+                lines.add(alias + ": (" + entry.getValue().size() + "人)");
+                for (String name : entry.getValue()) {
+                    lines.add(name);
+                }
             }
 
             PlumBot.getBot().sendMsg(
                     true,
-                    "当前在线：("
-                            + plugin.getServer()
-                            .getAllPlayers()
-                            .size()
-                            + "人)"
-                            + playerNames,
+                    String.join("\n", lines),
                     groupId
             );
 
