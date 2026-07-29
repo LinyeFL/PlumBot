@@ -291,6 +291,7 @@ public class QQEvent {
         }
 
         if (!Config.config.WhiteList.enable) {
+            bot.sendMsg(true, "白名单功能未开启", groupId);
             return true;
         }
 
@@ -432,6 +433,7 @@ public class QQEvent {
 
         if (applyMatcher.find()) {
             if (!Config.config.WhiteList.enable) {
+                PlumBot.getBot().sendMsg(true, "白名单功能未开启", groupId);
                 return true;
             }
 
@@ -516,6 +518,7 @@ public class QQEvent {
         }
 
         if (!Config.config.WhiteList.enable) {
+            PlumBot.getBot().sendMsg(true, "白名单功能未开启", groupId);
             return true;
         }
 
