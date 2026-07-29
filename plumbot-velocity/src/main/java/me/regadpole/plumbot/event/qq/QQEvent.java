@@ -402,6 +402,13 @@ public class QQEvent {
                     "/删除User白名单 <QQ号/kookID> "
                             + "删除指定群成员的白名单"
             );
+            helpMessages.add("群主/管理员命令:");
+            helpMessages.add(
+                    "/转发 开|关 开关本群QQ→MC消息转发"
+            );
+            helpMessages.add(
+                    "/通知 开|关 开关本群进出游戏通知"
+            );
 
             PlumBot.getBot().sendMsg(
                     true,
