@@ -332,6 +332,15 @@ public class QQBot implements Bot {
         return false;
     }
 
+    public GroupMemberInfo getGroupMemberInfo(long groupId, long userId) {
+        for (GroupMemberInfo member : client.getGroupMemberList(groupId)) {
+            if (member.getUserId().equals(userId)) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     public String getGroupMemberName(long groupId, long qq) {
         try {
             List<GroupMemberInfo> members = client.getGroupMemberList(groupId);
