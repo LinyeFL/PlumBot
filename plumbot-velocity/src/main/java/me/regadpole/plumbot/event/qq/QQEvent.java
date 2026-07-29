@@ -159,7 +159,7 @@ public class QQEvent {
 
         // Bug 修复 1/2：把 CQ 码替换成占位文本而非删除
         filteredMessage =
-                processCQCodes(filteredMessage);
+                processCQCodes(filteredMessage, bot, groupId);
 
         broadcastToMinecraft(
                 formatQqMessage(
@@ -641,15 +641,16 @@ public class QQEvent {
     }
 
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
-    private String processCQCodes(String msg) {
+    // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
+    private String processCQCodes(String msg, QQBot bot, long groupId) {
         // 图片
         msg = msg.replaceAll("\\[CQ:image,[^\\]]*\\]", "[图片]");
         // 表情
         msg = msg.replaceAll("\\[CQ:face,[^\\]]*\\]", "[表情]");
         // 回复
         msg = msg.replaceAll("\\[CQ:reply,[^\\]]*\\]", "[回复]");
-        // @某人，提取 QQ 号
-        msg = msg.replaceAll("\\[CQ:at,qq=(\\d+)[^\\]]*\\]", "@$1");
+        // @某人：查询群名片/昵称/QQ号
+        msg = replaceAtMentions(msg, bot, groupId);
         // @全体成员
         msg = msg.replaceAll("\\[CQ:at,qq=all[^\\]]*\\]", "@全体");
         // 戳一戳
@@ -673,6 +674,20 @@ public class QQEvent {
         // 其他未识别的 CQ 码，直接删除
         msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
         return msg;
+    }
+
+    // 改进2：替换 @某人 CQ 码，三级回退：群名片 → 昵称 → QQ号
+    private String replaceAtMentions(String msg, QQBot bot, long groupId) {
+        java.util.regex.Pattern atPattern = java.util.regex.Pattern.compile("\\[CQ:at,qq=(\\d+)[^\\]]*\\]");
+        java.util.regex.Matcher m = atPattern.matcher(msg);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            long qq = Long.parseLong(m.group(1));
+            String name = bot.getGroupMemberName(groupId, qq);
+            m.appendReplacement(sb, "@" + java.util.regex.Matcher.quoteReplacement(name));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     // MiniMessage 接入：用 miniMessage.deserialize 解析 <gold> 等标签
