@@ -4,6 +4,7 @@ import me.regadpole.plumbot.PlumBot;
 import me.regadpole.plumbot.internal.Config;
 import me.regadpole.plumbot.internal.DbConfig;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.DumperOptions;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -742,7 +743,9 @@ public class VelocityConfig {
     public void saveMessagesConfig() {
         try {
             File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
-            Yaml yaml = new Yaml();
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(options);
             try (java.io.FileWriter writer = new java.io.FileWriter(messagesFile)) {
                 yaml.dump(messagesObj, writer);
             }
