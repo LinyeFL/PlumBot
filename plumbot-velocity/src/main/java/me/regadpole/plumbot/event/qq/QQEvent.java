@@ -11,18 +11,20 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import sdk.event.message.GroupMessage;
 import sdk.event.message.PrivateMessage;
+import sdk.client.response.GroupMemberInfo;
 import sdk.event.notice.GroupDecreaseNotice;
-
+ 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class QQEvent {
 
-    // MiniMessage 实例，用于解析 <gold>、<green> 等标签
+    // &颜色码序列化器
     private static final LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacyAmpersand();
 
     private final PlumBot plugin;
@@ -111,6 +113,16 @@ public class QQEvent {
             return;
         }
 
+        // 改进4：群级别开关指令（/转发 开|关、/通知 开|关）
+        if (handleGroupSwitchCommands(
+                bot,
+                message,
+                groupId,
+                senderId
+        )) {
+            return;
+        }
+
         if (handleMemberCommands(
                 message,
                 groupId,
@@ -127,6 +139,11 @@ public class QQEvent {
         }
 
         if (!Config.config.Forwarding.enable) {
+            return;
+        }
+
+        // 改进4：检查当前群的转发开关
+        if (!isForwardEnabled(groupId)) {
             return;
         }
 
@@ -598,6 +615,147 @@ public class QQEvent {
         );
 
         return true;
+    }
+
+    // 改进4：群级别开关指令（/转发 开|关、/通知 开|关）
+    private boolean handleGroupSwitchCommands(
+            QQBot bot,
+            String message,
+            long groupId,
+            long senderId
+    ) {
+        boolean isForwardCmd =
+                message.equals("/转发 开") || message.equals("/转发 关");
+        boolean isNotifyCmd =
+                message.equals("/通知 开") || message.equals("/通知 关");
+
+        if (!isForwardCmd && !isNotifyCmd) {
+            return false;
+        }
+
+        // 权限检查：仅群主/管理员可用
+        if (!isGroupAdminOrOwner(bot, groupId, senderId)) {
+            bot.sendMsg(true, "该指令仅限群主/管理员使用", groupId);
+            return true;
+        }
+
+        if (message.equals("/转发 开")) {
+            setGroupSwitch(groupId, "forward", true);
+            bot.sendMsg(true, "已开启本群QQ→MC转发", groupId);
+            return true;
+        }
+        if (message.equals("/转发 关")) {
+            setGroupSwitch(groupId, "forward", false);
+            bot.sendMsg(true, "已关闭本群QQ→MC转发（指令仍正常响应）", groupId);
+            return true;
+        }
+        if (message.equals("/通知 开")) {
+            setGroupSwitch(groupId, "notify", true);
+            bot.sendMsg(true, "已开启本群进出游戏通知", groupId);
+            return true;
+        }
+        if (message.equals("/通知 关")) {
+            setGroupSwitch(groupId, "notify", false);
+            bot.sendMsg(true, "已关闭本群进出游戏通知", groupId);
+            return true;
+        }
+        return false;
+    }
+
+    // 改进4：判断发送者是否为群主或管理员
+    private boolean isGroupAdminOrOwner(
+            QQBot bot,
+            long groupId,
+            long senderId
+    ) {
+        try {
+            GroupMemberInfo info =
+                    bot.getGroupMemberInfo(groupId, senderId);
+            if (info != null) {
+                String role = info.getRole();
+                return "owner".equalsIgnoreCase(role)
+                        || "admin".equalsIgnoreCase(role);
+            }
+        } catch (Exception e) {
+            // 静默回退
+        }
+        return false;
+    }
+
+    // 改进4：检查当前群的转发开关（默认开）
+    @SuppressWarnings("unchecked")
+    private boolean isForwardEnabled(long groupId) {
+        return getGroupSwitch(groupId, "forward", true);
+    }
+
+    // 改进4：检查当前群的通知开关（默认开）
+    @SuppressWarnings("unchecked")
+    private boolean isNotifyEnabled(long groupId) {
+        return getGroupSwitch(groupId, "notify", true);
+    }
+
+    // 改进4：读取群开关，找不到则返回默认值
+    @SuppressWarnings("unchecked")
+    private boolean getGroupSwitch(long groupId, String key, boolean defaultValue) {
+        try {
+            Map<String, Object> msgObj = plugin.vconf.getMessagesObj();
+            if (msgObj != null) {
+                Map<String, Object> qqMap = (Map<String, Object>) msgObj.get("QQ");
+                if (qqMap != null) {
+                    Object switchesObj = qqMap.get("group-switches");
+                    if (switchesObj instanceof Map) {
+                        Map<String, Object> switches = (Map<String, Object>) switchesObj;
+                        Object groupSwitchObj = switches.get(String.valueOf(groupId));
+                        if (groupSwitchObj instanceof Map) {
+                            Map<String, Object> groupSwitch = (Map<String, Object>) groupSwitchObj;
+                            Object val = groupSwitch.get(key);
+                            if (val != null) {
+                                return Boolean.parseBoolean(String.valueOf(val));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 静默回退
+        }
+        return defaultValue;
+    }
+
+    // 改进4：设置群开关并持久化到 messages.yml
+    @SuppressWarnings("unchecked")
+    private void setGroupSwitch(long groupId, String key, boolean value) {
+        try {
+            Map<String, Object> msgObj = plugin.vconf.getMessagesObj();
+            if (msgObj == null) {
+                return;
+            }
+            Map<String, Object> qqMap = (Map<String, Object>) msgObj.get("QQ");
+            if (qqMap == null) {
+                qqMap = new HashMap<>();
+                msgObj.put("QQ", qqMap);
+            }
+            Object switchesObj = qqMap.get("group-switches");
+            Map<String, Object> switches;
+            if (switchesObj instanceof Map) {
+                switches = (Map<String, Object>) switchesObj;
+            } else {
+                switches = new HashMap<>();
+                qqMap.put("group-switches", switches);
+            }
+            Object groupSwitchObj = switches.get(String.valueOf(groupId));
+            Map<String, Object> groupSwitch;
+            if (groupSwitchObj instanceof Map) {
+                groupSwitch = (Map<String, Object>) groupSwitchObj;
+            } else {
+                groupSwitch = new HashMap<>();
+                switches.put(String.valueOf(groupId), groupSwitch);
+            }
+            groupSwitch.put(key, value);
+            plugin.vconf.saveMessagesConfig();
+        } catch (Exception e) {
+            // 静默回退
+        }
     }
 
     private String getGroupDisplayName(
