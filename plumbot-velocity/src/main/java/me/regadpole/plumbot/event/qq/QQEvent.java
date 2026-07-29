@@ -9,6 +9,8 @@ import me.regadpole.plumbot.internal.database.DatabaseManager;
 import me.regadpole.plumbot.tool.StringTool;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import sdk.event.message.GroupMessage;
 import sdk.event.message.PrivateMessage;
 import sdk.client.response.GroupMemberInfo;
@@ -19,6 +21,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +31,47 @@ public class QQEvent {
     // &颜色码序列化器
     private static final LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacyAmpersand();
 
+    // QQ回复缓存：消息UUID → ReplyInfo，5分钟TTL
+    private static final Map<String, ReplyInfo> replyCache = new ConcurrentHashMap<>();
+    private static final long REPLY_CACHE_TTL_MS = 5 * 60 * 1000;
+
+    public static class ReplyInfo {
+        private final long groupId;
+        private final long qqUserId;
+        private final String qqNickname;
+        private final long timestamp;
+
+        public ReplyInfo(long groupId, long qqUserId, String qqNickname) {
+            this.groupId = groupId;
+            this.qqUserId = qqUserId;
+            this.qqNickname = qqNickname;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public long getGroupId() { return groupId; }
+        public long getQqUserId() { return qqUserId; }
+        public String getQqNickname() { return qqNickname; }
+        public long getTimestamp() { return timestamp; }
+    }
+
+    public static ReplyInfo getReplyInfoByNickname(String nickname) {
+        cleanupExpired();
+        ReplyInfo latest = null;
+        for (ReplyInfo info : replyCache.values()) {
+            if (info.getQqNickname().equals(nickname)) {
+                if (latest == null || info.getTimestamp() > latest.getTimestamp()) {
+                    latest = info;
+                }
+            }
+        }
+        return latest;
+    }
+
+    private static void cleanupExpired() {
+        long now = System.currentTimeMillis();
+        replyCache.entrySet().removeIf(entry ->
+                now - entry.getValue().getTimestamp() > REPLY_CACHE_TTL_MS);
+    }
     private final PlumBot plugin;
 
     public QQEvent(PlumBot plugin) {
@@ -183,7 +228,10 @@ public class QQEvent {
                         groupName,
                         filteredName,
                         filteredMessage
-                )
+                ),
+                groupId,
+                senderId,
+                senderName
         );
     }
 
@@ -857,21 +905,26 @@ public class QQEvent {
         return sb.toString();
     }
 
-    // MiniMessage 接入：用 miniMessage.deserialize 解析 <gold> 等标签
+    // 广播QQ消息到MC，同时缓存回复信息并渲染为可点击组件
     private void broadcastToMinecraft(
-            String message
+            String message,
+            long groupId,
+            long senderId,
+            String senderName
     ) {
-        Component component =
-                legacySerializer.deserialize(message);
+        // 缓存回复信息
+        String messageId = UUID.randomUUID().toString();
+        replyCache.put(messageId, new ReplyInfo(groupId, senderId, senderName));
 
-        plugin.getServer()
-                .getAllPlayers()
-                .forEach(
-                        player ->
-                                player.sendMessage(
-                                        component
-                                )
-                );
+        Component component = legacySerializer.deserialize(message);
+
+        // 包装为可点击组件：点击后自动填入 /qqreply 昵称
+        Component clickable = component
+                .clickEvent(ClickEvent.suggestCommand("/qqreply " + senderName + " "))
+                .hoverEvent(HoverEvent.showText(
+                        Component.text("点击回复 QQ 用户 " + senderName)));
+
+        plugin.getServer().getAllPlayers().forEach(player -> player.sendMessage(clickable));
     }
 
     // Bug 修复 4：读取是否屏蔽官方 BOT（从 messagesObj 原始 Map）
