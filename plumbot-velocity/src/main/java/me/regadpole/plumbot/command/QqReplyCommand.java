@@ -7,6 +7,7 @@ import me.regadpole.plumbot.bot.QQBot;
 import me.regadpole.plumbot.event.qq.QQEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class QqReplyCommand implements SimpleCommand {
 
@@ -58,6 +59,11 @@ public class QqReplyCommand implements SimpleCommand {
 
         qqBot.sendCQMsg(true, qqMessage, replyInfo.getGroupId());
 
+        LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacyAmpersand();
+        Component mcBroadcast = legacySerializer.deserialize(
+                "&6[QQ回复] &f" + player.getUsername() + " &7→ &f" + replyInfo.getQqNickname() + "&7: " + message);
+        PlumBot.INSTANCE.getServer().getAllPlayers().forEach(p -> p.sendMessage(mcBroadcast));
+        
         player.sendMessage(
             Component.text("已回复 " + replyInfo.getQqNickname() + "：" + message, NamedTextColor.GREEN)
         );
