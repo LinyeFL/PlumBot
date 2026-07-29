@@ -15,6 +15,7 @@ import me.regadpole.plumbot.bot.Bot;
 import me.regadpole.plumbot.bot.KookBot;
 import me.regadpole.plumbot.bot.QQBot;
 import me.regadpole.plumbot.command.Commands;
+import me.regadpole.plumbot.command.QqReplyCommand;
 import me.regadpole.plumbot.config.VelocityConfig;
 import me.regadpole.plumbot.event.server.ServerEvent;
 import me.regadpole.plumbot.internal.Config;
@@ -82,6 +83,8 @@ public class PlumBot {
         CommandMeta linearbot = manager.metaBuilder("plumbot").aliases("pb", "PlumBot").build();
         manager.register(linearbot, new Commands(this));
         logger.info("插件命令监听器注册成功");
+        CommandMeta qqReply = manager.metaBuilder("qqreply").build();
+        manager.register(qqReply, new QqReplyCommand());
 
         pluginContainer = server.getPluginManager().fromInstance(this).orElseThrow(
                 () -> new IllegalArgumentException("The provided instance is not a plugin"));
