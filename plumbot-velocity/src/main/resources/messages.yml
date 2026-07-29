@@ -20,8 +20,13 @@ QQ:
   # 支持 MiniMessage 标签：<gold>、<green>、<white>、<bold> 等。
   format: "<gold>[{group}]</gold> <green>{player}</green><white>：</white>{message}"
 
-  # 可选：填写机器人自身 QQ 号后，该 QQ 号发出的消息不会转发到 MC。
-  bot-qq-id: 0
+  # 屏蔽 QQ 官方 BOT 消息（true=屏蔽，false=转发）
+  filter-official-bot: true
+
+  # 需要屏蔽的 BOT QQ 号列表（filter-official-bot 为 true 时生效）
+  # 官方 BOT 的 QQ 号可以在这里手动添加
+  filter-bot-ids:
+    - 123456789
 
 Notifications:
   # 控制首次进入代理网络及彻底离开代理网络的通知。
