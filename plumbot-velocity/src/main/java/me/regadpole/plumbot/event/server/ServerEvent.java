@@ -13,6 +13,7 @@ import me.regadpole.plumbot.tool.StringTool;
 import net.kyori.adventure.text.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,7 +112,7 @@ public class ServerEvent {
 
         if (firstConnection) {
             if (Config.messages.Notifications.joinQuitEnabled) {
-                sendToGroups(format(
+                sendNotificationToGroups(format(
                         Config.messages.Notifications.join,
                         "{player}", name,
                         "{server}", getServerDisplayName(toServer)
@@ -135,7 +136,7 @@ public class ServerEvent {
             return;
         }
 
-        sendToGroups(format(
+        sendNotificationToGroups(format(
                 Config.messages.Notifications.switchServer,
                 "{player}", name,
                 "{from_server}", getServerDisplayName(fromServer),
@@ -158,7 +159,7 @@ public class ServerEvent {
         }
 
         String name = StringTool.filterColor(event.getPlayer().getUsername());
-        sendToGroups(format(
+        sendNotificationToGroups(format(
                 Config.messages.Notifications.quit,
                 "{player}", name
         ));
@@ -193,5 +194,44 @@ public class ServerEvent {
         for (long groupID : groups) {
             PlumBot.getBot().sendMsg(true, message, groupID);
         }
+    }
+
+    // 改进4：发送通知到各群，受群级别通知开关控制
+    private void sendNotificationToGroups(String message) {
+        List<Long> groups = Config.bot.Groups;
+        for (long groupID : groups) {
+            if (!isNotifyEnabled(groupID)) {
+                continue;
+            }
+            PlumBot.getBot().sendMsg(true, message, groupID);
+        }
+    }
+
+    // 改进4：检查群通知开关（默认开）
+    @SuppressWarnings("unchecked")
+    private boolean isNotifyEnabled(long groupId) {
+        try {
+            Map<String, Object> msgObj = PlumBot.INSTANCE.vconf.getMessagesObj();
+            if (msgObj != null) {
+                Map<String, Object> qqMap = (Map<String, Object>) msgObj.get("QQ");
+                if (qqMap != null) {
+                    Object switchesObj = qqMap.get("group-switches");
+                    if (switchesObj instanceof Map) {
+                        Map<String, Object> switches = (Map<String, Object>) switchesObj;
+                        Object groupSwitchObj = switches.get(String.valueOf(groupId));
+                        if (groupSwitchObj instanceof Map) {
+                            Map<String, Object> groupSwitch = (Map<String, Object>) groupSwitchObj;
+                            Object notify = groupSwitch.get("notify");
+                            if (notify != null) {
+                                return Boolean.parseBoolean(String.valueOf(notify));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 静默回退
+        }
+        return true;
     }
 }
