@@ -204,6 +204,7 @@ public class QQEvent {
 
         if (removeByNameMatcher.find()) {
             if (!Config.config.WhiteList.enable) {
+                bot.sendMsg(true, "白名单功能未开启", groupId);
                 return true;
             }
 
