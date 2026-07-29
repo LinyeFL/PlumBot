@@ -808,6 +808,8 @@ public class QQEvent {
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
     // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
     private String processCQCodes(String msg, QQBot bot, long groupId) {
+        // HTML 实体解码（go-cqhttp 将 [] 编码为 &#91;/&#93; 防止和 CQ 码冲突）
+        msg = msg.replace("&#91;", "[").replace("&#93;", "]");
         // 图片
         msg = msg.replaceAll("\\[CQ:image,[^\\]]*\\]", "[图片]");
         // 表情
