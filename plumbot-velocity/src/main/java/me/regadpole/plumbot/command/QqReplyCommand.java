@@ -53,7 +53,7 @@ public class QqReplyCommand implements SimpleCommand {
             return;
         }
 
-        String qqMessage = "[CQ:at,qq=" + replyInfo.getQqUserId() + "] [MC回复] "
+        String qqMessage = "[CQ:at,qq=" + replyInfo.getQqUserId() + "]\n[MC回复] "
                 + player.getUsername() + "：" + message;
 
         qqBot.sendCQMsg(true, qqMessage, replyInfo.getGroupId());
