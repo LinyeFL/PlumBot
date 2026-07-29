@@ -18,7 +18,7 @@ QQ:
 
   # 可用变量：{group}、{player}、{message}
   # 支持 MiniMessage 标签：<gold>、<green>、<white>、<bold> 等。
-  format: "<gold>[{group}]</gold> <green>{player}</green><white>：</white>{message}"
+  format: "&6[{group}]&r &a{player}&r&f：&r{message}"
 
   # 屏蔽 QQ 官方 BOT 消息（true=屏蔽，false=转发）
   filter-official-bot: true
