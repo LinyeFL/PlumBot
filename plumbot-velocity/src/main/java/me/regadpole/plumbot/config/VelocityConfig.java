@@ -739,6 +739,18 @@ public class VelocityConfig {
         return messagesObj;
     }
 
+    public void saveMessagesConfig() {
+        try {
+            File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
+            Yaml yaml = new Yaml();
+            try (java.io.FileWriter writer = new java.io.FileWriter(messagesFile)) {
+                yaml.dump(messagesObj, writer);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warn("保存 messages.yml 失败: " + e.getMessage());
+        }
+    }
+
     public static void reloadConfig()
             throws IOException {
         Instance.loadConfig();
