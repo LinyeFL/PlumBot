@@ -8,6 +8,7 @@ import me.regadpole.plumbot.internal.DbConfig;
 import me.regadpole.plumbot.internal.database.DatabaseManager;
 import me.regadpole.plumbot.tool.StringTool;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import sdk.event.message.GroupMessage;
 import sdk.event.message.PrivateMessage;
 import sdk.event.notice.GroupDecreaseNotice;
@@ -15,10 +16,14 @@ import sdk.event.notice.GroupDecreaseNotice;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class QQEvent {
+
+    // MiniMessage 实例，用于解析 <gold>、<green> 等标签
+    private static final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     private final PlumBot plugin;
 
@@ -64,6 +69,14 @@ public class QQEvent {
         String message = event.getMessage();
         long groupId = event.getGroupId();
         long senderId = event.getUserId();
+
+        // 屏蔽 QQ 官方 BOT 消息（Bug 修复 4）
+        if (shouldFilterOfficialBot()) {
+            List<Long> filterIds = getFilterBotIds();
+            if (filterIds.contains(senderId)) {
+                return;
+            }
+        }
 
         String senderName;
 
@@ -144,8 +157,9 @@ public class QQEvent {
                         forwardingMessage
                 );
 
+        // Bug 修复 1/2：把 CQ 码替换成占位文本而非删除
         filteredMessage =
-                removeCqCodes(filteredMessage);
+                processCQCodes(filteredMessage);
 
         broadcastToMinecraft(
                 formatQqMessage(
@@ -597,6 +611,7 @@ public class QQEvent {
                 );
     }
 
+    // 拼接 QQ→MC 消息，对用户可控内容做 escapeTags 防止 MiniMessage 标签注入
     private String formatQqMessage(
             String group,
             String player,
@@ -610,26 +625,58 @@ public class QQEvent {
                     "[{group}] {player}：{message}";
         }
 
+        // 只转义被替换进去的用户输入，format 自身的 <gold> 等标签保留
+        String safeGroup = miniMessage.escapeTags(group);
+        String safePlayer = miniMessage.escapeTags(player);
+        String safeMessage = miniMessage.escapeTags(message);
+
         return format
-                .replace("{group}", group)
-                .replace("{player}", player)
-                .replace("{message}", message);
+                .replace("{group}", safeGroup)
+                .replace("{player}", safePlayer)
+                .replace("{message}", safeMessage);
     }
 
-    private String removeCqCodes(
-            String message
-    ) {
-        return message.replaceAll(
-                "\\[CQ:[^]]*]",
-                ""
-        );
+    // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
+    private String processCQCodes(String msg) {
+        // 图片
+        msg = msg.replaceAll("\\[CQ:image,[^\\]]*\\]", "[图片]");
+        // 表情
+        msg = msg.replaceAll("\\[CQ:face,[^\\]]*\\]", "[表情]");
+        // 回复
+        msg = msg.replaceAll("\\[CQ:reply,[^\\]]*\\]", "[回复]");
+        // @某人，提取 QQ 号
+        msg = msg.replaceAll("\\[CQ:at,qq=(\\d+)[^\\]]*\\]", "@$1");
+        // @全体成员
+        msg = msg.replaceAll("\\[CQ:at,qq=all[^\\]]*\\]", "@全体");
+        // 戳一戳
+        msg = msg.replaceAll("\\[CQ:poke,[^\\]]*\\]", "[戳一戳]");
+        // 语音
+        msg = msg.replaceAll("\\[CQ:record,[^\\]]*\\]", "[语音]");
+        // 视频
+        msg = msg.replaceAll("\\[CQ:video,[^\\]]*\\]", "[视频]");
+        // 文件
+        msg = msg.replaceAll("\\[CQ:file,[^\\]]*\\]", "[文件]");
+        // 转发
+        msg = msg.replaceAll("\\[CQ:forward,[^\\]]*\\]", "[合并转发]");
+        // 红包
+        msg = msg.replaceAll("\\[CQ:redbag,[^\\]]*\\]", "[红包]");
+        // 礼物
+        msg = msg.replaceAll("\\[CQ:gift,[^\\]]*\\]", "[礼物]");
+        // JSON 卡片
+        msg = msg.replaceAll("\\[CQ:json,[^\\]]*\\]", "[卡片]");
+        // XML 消息
+        msg = msg.replaceAll("\\[CQ:xml,[^\\]]*\\]", "[XML]");
+        // 其他未识别的 CQ 码，直接删除
+        msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
+        return msg;
     }
 
+    // MiniMessage 接入：用 miniMessage.deserialize 解析 <gold> 等标签
     private void broadcastToMinecraft(
             String message
     ) {
         Component component =
-                Component.text(message);
+                miniMessage.deserialize(message);
 
         plugin.getServer()
                 .getAllPlayers()
@@ -639,6 +686,50 @@ public class QQEvent {
                                         component
                                 )
                 );
+    }
+
+    // Bug 修复 4：读取是否屏蔽官方 BOT（从 messagesObj 原始 Map）
+    @SuppressWarnings("unchecked")
+    private boolean shouldFilterOfficialBot() {
+        try {
+            Map<String, Object> msgObj = plugin.vconf.getMessagesObj();
+            if (msgObj != null) {
+                Map<String, Object> qqMap = (Map<String, Object>) msgObj.get("QQ");
+                if (qqMap != null) {
+                    Object val = qqMap.get("filter-official-bot");
+                    if (val != null) {
+                        return Boolean.parseBoolean(String.valueOf(val));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 静默回退
+        }
+        return true;
+    }
+
+    // Bug 修复 4：读取需要屏蔽的 BOT QQ 号列表
+    @SuppressWarnings("unchecked")
+    private List<Long> getFilterBotIds() {
+        try {
+            Map<String, Object> msgObj = plugin.vconf.getMessagesObj();
+            if (msgObj != null) {
+                Map<String, Object> qqMap = (Map<String, Object>) msgObj.get("QQ");
+                if (qqMap != null) {
+                    Object val = qqMap.get("filter-bot-ids");
+                    if (val instanceof List) {
+                        List<Long> result = new ArrayList<>();
+                        for (Object o : (List<?>) val) {
+                            result.add(Long.parseLong(String.valueOf(o)));
+                        }
+                        return result;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 静默回退
+        }
+        return new ArrayList<>();
     }
 
     public void onGroupDecreaseNotice(
