@@ -888,6 +888,8 @@ public class QQEvent {
         msg = msg.replaceAll("\\[CQ:xml,[^\\]]*\\]", "[XML]");
         // 其他未识别的 CQ 码，直接删除
         msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
+        // 清理新版 go-cqhttp 图片消息泄露的文件元数据
+        msg = msg.replaceAll("\\[图片\\],[^\\[]*(?=file_size=\\d+)[^\\[]*", "[图片]");     
         return msg;
     }
 
