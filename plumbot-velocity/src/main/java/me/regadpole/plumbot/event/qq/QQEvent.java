@@ -8,7 +8,7 @@ import me.regadpole.plumbot.internal.DbConfig;
 import me.regadpole.plumbot.internal.database.DatabaseManager;
 import me.regadpole.plumbot.tool.StringTool;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import sdk.event.message.GroupMessage;
 import sdk.event.message.PrivateMessage;
 import sdk.event.notice.GroupDecreaseNotice;
@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 public class QQEvent {
 
     // MiniMessage 实例，用于解析 <gold>、<green> 等标签
-    private static final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private static final LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacyAmpersand();
 
     private final PlumBot plugin;
 
@@ -629,10 +629,10 @@ public class QQEvent {
                     "[{group}] {player}：{message}";
         }
 
-        // 只转义被替换进去的用户输入，format 自身的 <gold> 等标签保留
-        String safeGroup = miniMessage.escapeTags(group);
-        String safePlayer = miniMessage.escapeTags(player);
-        String safeMessage = miniMessage.escapeTags(message);
+        // 用户输入中的 & 替换为 &&（LegacyComponentSerializer 将 && 渲染为普通 &）
+        String safeGroup = group.replace("&", "&&");
+        String safePlayer = player.replace("&", "&&");
+        String safeMessage = message.replace("&", "&&");
 
         return format
                 .replace("{group}", safeGroup)
@@ -695,7 +695,7 @@ public class QQEvent {
             String message
     ) {
         Component component =
-                miniMessage.deserialize(message);
+                legacySerializer.deserialize(message);
 
         plugin.getServer()
                 .getAllPlayers()
