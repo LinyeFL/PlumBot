@@ -54,17 +54,9 @@ public class QQEvent {
         public long getTimestamp() { return timestamp; }
     }
 
-    public static ReplyInfo getReplyInfoByNickname(String nickname) {
+    public static ReplyInfo getReplyInfoByMessageId(String messageId) {
         cleanupExpired();
-        ReplyInfo latest = null;
-        for (ReplyInfo info : replyCache.values()) {
-            if (info.getQqNickname().equals(nickname)) {
-                if (latest == null || info.getTimestamp() > latest.getTimestamp()) {
-                    latest = info;
-                }
-            }
-        }
-        return latest;
+        return replyCache.get(messageId);
     }
 
     private static void cleanupExpired() {
@@ -922,7 +914,7 @@ public class QQEvent {
 
         // 包装为可点击组件：点击后自动填入 /qqreply 昵称
         Component clickable = component
-                .clickEvent(ClickEvent.suggestCommand("/qqreply " + senderName + " "))
+                .clickEvent(ClickEvent.suggestCommand("/qqreply " + messageId + " "))
                 .hoverEvent(HoverEvent.showText(
                         Component.text("点击回复 QQ 用户 " + senderName)));
 
