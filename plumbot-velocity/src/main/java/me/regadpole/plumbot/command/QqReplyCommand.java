@@ -29,7 +29,7 @@ public class QqReplyCommand implements SimpleCommand {
             return;
         }
 
-        String targetNickname = args[0];
+        String messageId = args[0];
         StringBuilder msgBuilder = new StringBuilder();
         for (int i = 1; i < args.length; i++) {
             if (i > 1) msgBuilder.append(" ");
@@ -37,10 +37,10 @@ public class QqReplyCommand implements SimpleCommand {
         }
         String message = msgBuilder.toString();
 
-        QQEvent.ReplyInfo replyInfo = QQEvent.getReplyInfoByNickname(targetNickname);
+        QQEvent.ReplyInfo replyInfo = QQEvent.getReplyInfoByMessageId(messageId);
         if (replyInfo == null) {
             player.sendMessage(
-                Component.text("找不到该QQ用户，可能消息已过期（5分钟有效）或昵称不匹配", NamedTextColor.RED)
+                Component.text("找不到该QQ用户，可能消息已过期（5分钟有效）", NamedTextColor.RED)
             );
             return;
         }
@@ -59,7 +59,7 @@ public class QqReplyCommand implements SimpleCommand {
         qqBot.sendMsg(true, qqMessage, replyInfo.getGroupId());
 
         player.sendMessage(
-            Component.text("已回复 " + targetNickname + "：" + message, NamedTextColor.GREEN)
+            Component.text("已回复 " + replyInfo.getQqNickname() + "：" + message, NamedTextColor.GREEN)
         );
     }
 }
