@@ -56,7 +56,7 @@ public class QqReplyCommand implements SimpleCommand {
         String qqMessage = "[CQ:at,qq=" + replyInfo.getQqUserId() + "] [MC回复] "
                 + player.getUsername() + "：" + message;
 
-        qqBot.sendMsg(true, qqMessage, replyInfo.getGroupId());
+        qqBot.sendCQMsg(true, qqMessage, replyInfo.getGroupId());
 
         player.sendMessage(
             Component.text("已回复 " + replyInfo.getQqNickname() + "：" + message, NamedTextColor.GREEN)
