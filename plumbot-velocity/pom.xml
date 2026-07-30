@@ -3,28 +3,28 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+ 
     <modelVersion>4.0.0</modelVersion>
-
+ 
     <parent>
         <groupId>me.regadpole</groupId>
         <artifactId>plumbot</artifactId>
         <version>1.3.2</version>
     </parent>
-
+ 
     <artifactId>plumbot-velocity</artifactId>
-
+ 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
+ 
     <repositories>
         <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
     </repositories>
-
+ 
     <dependencies>
         <dependency>
             <groupId>com.velocitypowered</groupId>
@@ -32,27 +32,34 @@
             <version>3.1.1</version>
             <scope>provided</scope>
         </dependency>
-
+ 
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-text-minimessage</artifactId>
             <version>4.11.0</version>
             <scope>provided</scope>
         </dependency>
-
+ 
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>2.0</version>
             <scope>provided</scope>
         </dependency>
-
+ 
         <dependency>
             <groupId>com.github.SNWCreations</groupId>
             <artifactId>KookBC</artifactId>
             <version>0.33.0-local</version>
             <scope>compile</scope>
         </dependency>
-    </dependencies>
 
+        <!-- OkHttp 4.12.0 覆盖 KookBC 旧版，修复 Java 21 兼容性 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+        </dependency>
+    </dependencies>
+ 
 </project>
