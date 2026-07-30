@@ -867,7 +867,7 @@ public class QQEvent {
     private String processCQCodes(String msg, QQBot bot, long groupId) {
         msg = msg.replace("&#91;", "[").replace("&#93;", "]");
 
-        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app")) {
+        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"faceType") || msg.startsWith("{\"data")) {
             return "[分享链接]";
         }
 
@@ -902,13 +902,37 @@ public class QQEvent {
     private String cleanupStickerMetadata(String msg) {
         msg = msg.replaceAll("\\{file:[^}]*gxh\\.vip\\.qq\\.com[^}]*\\}", "[表情]");
         msg = msg.replaceAll("\\{file:[^}]{30,}\\}", "[表情]");
-        msg = msg.replace("&&#44;", ",");
 
+        // 修复 HTML 实体：go-cqhttp 原始消息用 &#44; 代替逗号（单 &，非双 &&）
+        msg = msg.replace("&#44;", ",");
+
+        // 扩展键值对清理：增加 key / emoji_id / emoji_package_id / file_size / url 等
         String stripped = msg.replaceAll(
-            "(?:^|[,;]\\s*)(?:faceType|packId|stickerId|sourceType|stickerType|resultId|pokeType|spokeSummary|doubleHit|emojiId|emojiPackageId|summary|imageType|randomType|msgType|vaspokeId|oldVersionStr|chainCount)\\s*[=:]\\s*(?:\"[^\"]*\"|'[^']*'|[^,;\\[\\] ]+)",
+            "(?:^|[\\s,;]+)"
+            + "(?:faceType|packId|stickerId|sourceType|stickerType|resultId"
+            + "|pokeType|spokeSummary|doubleHit|emojiId|emojiPackageId|summary"
+            + "|imageType|randomType|msgType|vaspokeId|oldVersionStr|chainCount"
+            + "|key|emoji_id|emoji_package_id|file_size|md5|sub_type|pokeStrength|url)"
+            + "\\s*[=:]\\s*(?:\"[^\"]*\"|'[^']*'|[^,\\s;\\[\\]]+)",
             ""
         );
-        stripped = stripped.replaceAll("^[,;\\s]+", "").trim();
+
+        // 清理裸露的 URL（http/https）
+        stripped = stripped.replaceAll("https?://[^\\s,;\\[\\]]+", "");
+
+        // 清理裸露的自动生成文件名（如 6787322A257942C08382AC6E5CDC0F81.jpg）
+        stripped = stripped.replaceAll("[A-Fa-f0-9\\-]{20,}\\.[a-z]{3,4}", "");
+
+        // 收尾：清理残留的逗号分号空白
+        stripped = stripped.replaceAll("[,;]\\s*[,;]", ",");
+        stripped = stripped.replaceAll("^[,\\s;]+", "");
+        stripped = stripped.replaceAll("[,\\s;]+$", "");
+        stripped = stripped.trim();
+
+        // 兜底：残留纯 JSON 花括号结构 → 占位符
+        if (stripped.matches("\\s*\\{[^{}]*\"(?:faceType|packId|stickerId|sourceType|stickerType|randomType|msgType|app|config|meta|data)[^{}]*\\}\\s*")) {
+            return "[超级表情]";
+        }
 
         if (!msg.equals(stripped) && stripped.isEmpty()) {
             return "[超级表情]";
