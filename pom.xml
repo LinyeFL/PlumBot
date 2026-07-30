@@ -72,6 +72,12 @@
             <artifactId>KookBC</artifactId>
             <version>0.32.1</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>dev.rollczi</groupId>
+                    <artifactId>litecommands-framework</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>net.kyori</groupId>
