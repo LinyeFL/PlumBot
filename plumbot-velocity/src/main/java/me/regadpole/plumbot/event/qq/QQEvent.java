@@ -867,15 +867,15 @@ public class QQEvent {
     private String processCQCodes(String msg, QQBot bot, long groupId) {
         msg = msg.replace("&#91;", "[").replace("&#93;", "]");
 
-        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"faceType") || msg.startsWith("{\"data")) {
+        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"faceType") || msg.startsWith("{\"data") || msg.startsWith("\",\"faceType") || msg.startsWith("\"faceType")) {
             return "[分享链接]";
         }
 
+        if (msg.contains("[CQ:music,") || (msg.contains("[CQ:json,") && msg.toLowerCase().contains("music")) || (msg.contains("[CQ:share,") && msg.toLowerCase().contains("music"))) {
+            return "[音乐分享]";
+        }
         if (msg.contains("[CQ:json,") || msg.contains("[CQ:share,") || msg.contains("[CQ:xml,")) {
             return "[分享链接]";
-        }
-        if (msg.contains("[CQ:music,")) {
-            return "[音乐分享]";
         }
 
         msg = msg.replaceAll("\\[CQ:mface,[^\\]]*\\]", "[超级表情]");
@@ -903,7 +903,14 @@ public class QQEvent {
         msg = msg.replaceAll("\\{file:[^}]*gxh\\.vip\\.qq\\.com[^}]*\\}", "[表情]");
         msg = msg.replaceAll("\\{file:[^}]{30,}\\}", "[表情]");
 
-        // 修复 HTML 实体：go-cqhttp 原始消息用 &#44; 代替逗号（单 &，非双 &&）
+        // 清理 QQ 新版图片外溢元数据：,file=];fileid=...;rkey=...] 或 ,file=]
+        msg = msg.replaceAll(",\\s*file\\s*=\\s*\\];\\s*fileid\\s*=[^,;]*;\\s*rkey\\s*=[^\\],;]*\\]?", "");
+        msg = msg.replaceAll(",\\s*file\\s*=\\s*\\]", "");
+
+        // 清理 CQ 表情标签外的 JSON blob：以 "faceType 或 ,"faceType 开头
+        msg = msg.replaceAll("(?:,\\s*)?\"faceType\"\\s*:\\s*\\d+(?:,\"[^\"]+\"\\s*:\\s*(?:\"[^\"]*\"|\\d+|null|true|false))*", "[超级表情]");
+
+        // 修复 HTML 实体
         msg = msg.replace("&#44;", ",");
 
         // 扩展键值对清理：增加 key / emoji_id / emoji_package_id / file_size / url 等
