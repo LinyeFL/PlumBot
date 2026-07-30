@@ -2,7 +2,7 @@
 Ver: '1.3.0'
 
 Bot:
-  Mode: "kook"
+  Mode: "both"
   #机器人模式，可选go-cqhttp、kook
   go-cqhttp:
     Http: "http://127.0.0.1:5700"
@@ -14,9 +14,10 @@ Bot:
     ListenPort: 5701
     #插件监听的端口号，请在go-cqhttp的config文件中的adapters下http的post里面仿照示例添加且仅添加url为插件所在服务器ip:端口
   Kook:
-  #kook机器人，只支持websocket
+    #kook机器人，只支持websocket
     Token: ""
     #kook机器人Token
+    Debug: false
 
 Groups:
   - 111
@@ -25,3 +26,6 @@ Groups:
 Admins:
   - 111
   #管理员的qq,还是一个长整形
+
+KookGroups:
+  语音频道: 111
