@@ -865,7 +865,7 @@ public class QQEvent {
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
     // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
     private String processCQCodes(String msg, QQBot bot, long groupId) {
-        msg = msg.replace("&#91;", "[").replace("&#93;", "]").replace("&#44;", ",");
+        msg = msg.replace("&#91;", "[").replace("&#93;", "]").replace("&#44;", ",").replace("&#39;", "'").replace("&amp;", "&");
 
         if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"data")) {
             return "[分享链接]";
@@ -909,7 +909,9 @@ public class QQEvent {
 
         // 清理 QQ 新版图片外溢元数据：,file=];fileid=...;rkey=...] 或 ,file=]
         msg = msg.replaceAll(",\\s*file\\s*=\\s*\\];\\s*fileid\\s*=[^,;]*;\\s*rkey\\s*=[^\\],;]*\\]?", "");
-        msg = msg.replaceAll(",\\s*file\\s*=\\s*\\]", "");
+        while (msg.contains(",file=]") || msg.contains(", file=]") || msg.contains(",file =]")) {
+            msg = msg.replace(",file=]", "").replace(", file=]", "").replace(",file =]", "");
+        }
 
         // 清理 CQ 表情标签外的 JSON blob：{"faceType":3,...} 或 ,{"faceType":3,...}
         msg = msg.replaceAll("(?:,\\s*)?\\{\"faceType\"\\s*:\\s*\\d+(?:,\"[^\"]+\"\\s*:\\s*(?:\"[^\"]*\"|\\d+|null|true|false))*\\}", "[超级表情]");
