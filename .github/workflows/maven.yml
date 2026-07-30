@@ -35,7 +35,10 @@ jobs:
         chmod +x gradlew
         ./gradlew shadowJar --no-daemon
     - name: Install KookBC to local Maven repo
-      run: mvn install:install-file -Dfile=KookBC/build/libs/kookbc-0.33.0-all.jar -DgroupId=io.github.snwcreations -DartifactId=KookBC -Dversion=0.33.0 -Dpackaging=jar
+      run: |
+        ls KookBC/build/libs/
+        JAR=$(ls KookBC/build/libs/*.jar | head -1)
+        mvn install:install-file -Dfile="$JAR" -DgroupId=io.github.snwcreations -DartifactId=KookBC -Dversion=0.33.0 -Dpackaging=jar
     - name: Build with Maven
       run: mvn -B package --file pom.xml
  
