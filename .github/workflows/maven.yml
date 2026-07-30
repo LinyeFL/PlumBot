@@ -35,16 +35,16 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: "PlumBot-bukkit.jar"
-        path: plumbot-bukkit/target/plumbot-bukkit\*.jar
+        path: 'plumbot-bukkit/target/plumbot-bukkit-*.jar'
 
     - name: Upload a Build Artifact - PlumBot-velocity
       uses: actions/upload-artifact@v4
       with:
         name: "PlumBot-velocity.jar"
-        path: plumbot-velocity/target/plumbot-velocity\*.jar
+        path: 'plumbot-velocity/target/plumbot-velocity-*.jar'
 
     - name: Upload a Build Artifact - PlumBot-bungee
       uses: actions/upload-artifact@v4
       with:
         name: "Plumbot-bungee.jar"
-        path: plumbot-bungee/target/plumbot-bungee\*.jar
+        path: 'plumbot-bungee/target/plumbot-bungee-*.jar'
