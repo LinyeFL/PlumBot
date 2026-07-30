@@ -865,75 +865,58 @@ public class QQEvent {
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
     // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
     private String processCQCodes(String msg, QQBot bot, long groupId) {
-        // HTML 实体解码（go-cqhttp 将 [] 编码为 &#91;/&#93; 防止和 CQ 码冲突）
         msg = msg.replace("&#91;", "[").replace("&#93;", "]");
-        // 原始 XML/JSON 分享卡片 → 占位符
-        if (msg.startsWith("<?xml") || msg.startsWith("<msg")) {
+
+        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app")) {
             return "[分享链接]";
         }
-        if (msg.startsWith("{\"app") || msg.startsWith("{\"app\":")) {
+
+        if (msg.contains("[CQ:json,") || msg.contains("[CQ:share,") || msg.contains("[CQ:xml,")) {
             return "[分享链接]";
         }
-        // 市场表情（超级秀/收藏表情包）
+        if (msg.contains("[CQ:music,")) {
+            return "[音乐分享]";
+        }
+
         msg = msg.replaceAll("\\[CQ:mface,[^\\]]*\\]", "[超级表情]");
-        // 大表情
         msg = msg.replaceAll("\\[CQ:bface,[^\\]]*\\]", "[表情]");
-        // 小表情
         msg = msg.replaceAll("\\[CQ:sface,[^\\]]*\\]", "[表情]");
-        // 图片
         msg = msg.replaceAll("\\[CQ:image,[^\\]]*\\]", "[图片]");
-        // 表情
         msg = msg.replaceAll("\\[CQ:face,[^\\]]*\\]", "[表情]");
-        // 回复
         msg = msg.replaceAll("\\[CQ:reply,[^\\]]*\\]", "[回复]");
-        // @某人：查询群名片/昵称/QQ号
         msg = replaceAtMentions(msg, bot, groupId);
-        // @全体成员
         msg = msg.replaceAll("\\[CQ:at,qq=all[^\\]]*\\]", "@全体");
-        // 戳一戳
         msg = msg.replaceAll("\\[CQ:poke,[^\\]]*\\]", "[戳一戳]");
-        // 语音
         msg = msg.replaceAll("\\[CQ:record,[^\\]]*\\]", "[语音]");
-        // 视频
         msg = msg.replaceAll("\\[CQ:video,[^\\]]*\\]", "[视频]");
-        // 文件
         msg = msg.replaceAll("\\[CQ:file,[^\\]]*\\]", "[文件]");
-        // 分享链接
-        msg = msg.replaceAll("\\[CQ:share,[^\\]]*\\]", "[分享链接]");
-        // 转发
         msg = msg.replaceAll("\\[CQ:forward,[^\\]]*\\]", "[合并转发]");
-        // 红包
         msg = msg.replaceAll("\\[CQ:redbag,[^\\]]*\\]", "[红包]");
-        // 礼物
         msg = msg.replaceAll("\\[CQ:gift,[^\\]]*\\]", "[礼物]");
-        // JSON 卡片
-        msg = msg.replaceAll("\\[CQ:json,[^\\]]*\\]", "[卡片]");
-        // XML 消息
-        msg = msg.replaceAll("\\[CQ:xml,[^\\]]*\\]", "[XML]");
-        // 清理泄漏的表情/贴纸元数据
         msg = cleanupStickerMetadata(msg);
-        // 其他未识别的 CQ 码，直接删除
         msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
-        // 清理图片消息泄露的元数据（非贪婪，不伤后面文字）
-        msg = msg.replaceAll("\\[图片\\][^\\[]*?file_size=\\d+\\]", "[图片]");
         return msg;
     }
 
      // 清理超级秀/收藏表情在 CQ 码外附带的泄漏元数据
     private String cleanupStickerMetadata(String msg) {
-        // 超级秀表情泄漏：faceType:3,packId:4,stickerId:76,...
-        msg = msg.replaceAll(
-            "(?:^|,\\s*)(?:faceType|packId|stickerId|resultId|sourceType|stickerType|pokeType|spokeSummary|doubleHit|emojiId|emojiPackageId|summary):[^,\\[\\]]+(?:,\\s*)?",
+        msg = msg.replaceAll("\\{file:[^}]*gxh\\.vip\\.qq\\.com[^}]*\\}", "[表情]");
+        msg = msg.replaceAll("\\{file:[^}]{30,}\\}", "[表情]");
+        msg = msg.replace("&&#44;", ",");
+
+        String stripped = msg.replaceAll(
+            "(?:^|[,;]\\s*)(?:faceType|packId|stickerId|sourceType|stickerType|resultId|pokeType|spokeSummary|doubleHit|emojiId|emojiPackageId|summary|imageType|randomType|msgType|vaspokeId|oldVersionStr|chainCount)\\s*[=:]\\s*(?:\"[^\"]*\"|'[^']*'|[^,;\\[\\] ]+)",
             ""
         );
-        // 收藏表情泄漏：file=...&url=...&emo_ji_id=...
-        msg = msg.replaceAll(
-            "(?:^|&)(?:file|url|emo_ji_id|emoji_package_id)=[^&\\[\\]]+(?:&)?",
-            ""
-        );
-        msg = msg.replaceAll("^,\\s*", "");
-        msg = msg.replaceAll(",\\s*,", ",");
-        return msg.trim();
+        stripped = stripped.replaceAll("^[,;\\s]+", "").trim();
+
+        if (!msg.equals(stripped) && stripped.isEmpty()) {
+            return "[超级表情]";
+        }
+        if (!msg.equals(stripped)) {
+            msg = stripped;
+        }
+        return msg;
     }
  
     // 改进2：替换 @某人 CQ 码，三级回退：群名片 → 昵称 → QQ号
