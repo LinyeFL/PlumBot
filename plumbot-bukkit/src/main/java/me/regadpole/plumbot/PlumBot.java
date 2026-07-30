@@ -33,7 +33,8 @@ public final class PlumBot extends JavaPlugin implements Listener {
     private static TaskScheduler scheduler;
 
     private static Database database;
-    private static Bot bot;
+    private static QQBot qqBot;
+    private static KookBot kookBot;
     private static Environment environment;
 
     @Override
@@ -67,16 +68,24 @@ public final class PlumBot extends JavaPlugin implements Listener {
         getLogger().info("命令注册完毕");
 
         getScheduler().runTaskAsynchronously(() -> {
-            switch (Config.getBotMode()) {
+            String mode = Config.getBotMode();
+            switch (mode) {
                 case "go-cqhttp":
-                    bot = new QQBot();
-                    bot.start();
+                    qqBot = new QQBot();
+                    qqBot.start();
                     getLogger().info("已启动go-cqhttp服务");
                     break;
                 case "kook":
-                    bot = new KookBot();
-                    bot.start();
-                    KookBot.setKookEnabled(true);
+                    kookBot = new KookBot();
+                    kookBot.start();
+                    getLogger().info("已启动kook服务");
+                    break;
+                case "both":
+                    qqBot = new QQBot();
+                    qqBot.start();
+                    getLogger().info("已启动go-cqhttp服务");
+                    kookBot = new KookBot();
+                    kookBot.start();
                     getLogger().info("已启动kook服务");
                     break;
                 default:
@@ -99,14 +108,29 @@ public final class PlumBot extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
 
-        switch (Config.getBotMode()) {
+        String mode = Config.getBotMode();
+        switch (mode) {
             case "go-cqhttp":
-                bot.shutdown();
-                getLogger().info("已关闭go-cqhttp服务");
+                if (qqBot != null) {
+                    qqBot.shutdown();
+                    getLogger().info("已关闭go-cqhttp服务");
+                }
                 break;
             case "kook":
-                bot.shutdown();
-                getLogger().info("已关闭kook服务");
+                if (kookBot != null) {
+                    kookBot.shutdown();
+                    getLogger().info("已关闭kook服务");
+                }
+                break;
+            case "both":
+                if (qqBot != null) {
+                    qqBot.shutdown();
+                    getLogger().info("已关闭go-cqhttp服务");
+                }
+                if (kookBot != null) {
+                    kookBot.shutdown();
+                    getLogger().info("已关闭kook服务");
+                }
                 break;
             default:
                 getLogger().warning("无法正常关闭服务，将在服务器关闭后强制关闭");
@@ -126,17 +150,25 @@ public final class PlumBot extends JavaPlugin implements Listener {
         return scheduler;
     }
 
+    public static QQBot getQQBot() {
+        return qqBot;
+    }
+
+    public static KookBot getKookBot() {
+        return kookBot;
+    }
+
+    // 兼容旧调用，仅返回 QQBot（both 模式下 QQ 优先）
+    @Deprecated
     public static Bot getBot() {
-        return bot;
+        return qqBot;
     }
 
     public static Database getDatabase() {
         return database;
     }
     public void setDatabase(Database database) {
-        PlumBot.database =database;
+        PlumBot.database = database;
     }
     public Environment getEnvironment() {return environment;}
 }
-
-
