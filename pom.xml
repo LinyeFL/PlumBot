@@ -98,13 +98,6 @@
             <scope>compile</scope>
         </dependency>-->
         <dependency>
-            <groupId>com.github.SNWCreations</groupId>
-            <artifactId>KookBC</artifactId>
-            <version>0.33.0</version>
-            <scope>system</scope>
-            <systemPath>${project.parent.basedir}/libs/kookbc-0.33.0.jar</systemPath>
-        </dependency>
-        <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>event-api</artifactId>
             <version>3.0.0</version>
