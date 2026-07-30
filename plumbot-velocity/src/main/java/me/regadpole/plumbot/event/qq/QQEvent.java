@@ -701,7 +701,7 @@ public class QQEvent {
     ) {
         if (message.equals("/debugraw") && Config.bot.Admins.contains(senderId)) {
             debugRawMode = !debugRawMode;
-            bot.sendMsg(true, "原始消息调试模式：" + (debugRawMode ? "§a开启" : "§c关闭"), groupId);
+            bot.sendMsg(true, "原始消息调试模式：" + (debugRawMode ? "开启" : "关闭"), groupId);
             return true;
         }
 
@@ -882,7 +882,7 @@ public class QQEvent {
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
     // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
     private String processCQCodes(String msg, QQBot bot, long groupId) {
-        msg = msg.replace("&#91;", "[").replace("&#93;", "]").replace("&#44;", ",").replace("&#39;", "'").replace("&amp;", "&");
+        msg = msg.replace("&#44;", ",").replace("&#39;", "'").replace("&amp;", "&");
 
         if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"data")) {
             return "[分享链接]";
@@ -914,6 +914,7 @@ public class QQEvent {
         msg = msg.replaceAll("\\[CQ:forward,[^\\]]*\\]", "[合并转发]");
         msg = msg.replaceAll("\\[CQ:redbag,[^\\]]*\\]", "[红包]");
         msg = msg.replaceAll("\\[CQ:gift,[^\\]]*\\]", "[礼物]");
+        msg = msg.replace("&#91;", "[").replace("&#93;", "]");
         msg = cleanupStickerMetadata(msg);
         msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
         return msg;
