@@ -37,12 +37,12 @@ public class KookEvent implements Listener {
     public void onChannelMessageReceive(ChannelMessageEvent e) {
 
         // 频道白名单：只处理配置的 KOOK 频道
-        List<Long> kookGroups = Config.bot.KookGroups;
+        List<String> kookGroups = Config.bot.KookGroups;
         if (kookGroups == null || kookGroups.isEmpty()) return;
 
         boolean inConfiguredChannel = false;
-        for (long groupId : kookGroups) {
-            if (e.getChannel().getId().equalsIgnoreCase(kBot.getChannel(groupId).getId())) {
+        for (String groupId : kookGroups) {
+            if (e.getChannel().getId().equalsIgnoreCase(groupId)) {
                 inConfiguredChannel = true;
                 break;
             }
@@ -52,10 +52,7 @@ public class KookEvent implements Listener {
         Pattern pattern;
         Matcher matcher;
 
-        ArrayList<String> groups = new ArrayList<>();
-        for (long groupId : kookGroups) {
-            groups.add(kBot.getChannel(groupId).getId());
-        }
+        ArrayList<String> groups = new ArrayList<>(kookGroups);
 
         ArrayList<String> admins = new ArrayList<>();
         for (long adminId : Config.bot.Admins) {
