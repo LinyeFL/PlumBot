@@ -246,17 +246,7 @@ public class QQEvent {
     private boolean shouldIgnoreMessage(
             String message
     ) {
-        Pattern xmlPattern =
-                Pattern.compile("<?xm.*");
-
-        if (xmlPattern.matcher(message).find()) {
-            return true;
-        }
-
-        Pattern appPattern =
-                Pattern.compile("\"ap.*");
-
-        return appPattern.matcher(message).find();
+        return false;
     }
 
     private boolean handleAdminCommands(
@@ -877,6 +867,13 @@ public class QQEvent {
     private String processCQCodes(String msg, QQBot bot, long groupId) {
         // HTML 实体解码（go-cqhttp 将 [] 编码为 &#91;/&#93; 防止和 CQ 码冲突）
         msg = msg.replace("&#91;", "[").replace("&#93;", "]");
+        // 原始 XML/JSON 分享卡片 → 占位符
+        if (msg.startsWith("<?xml") || msg.startsWith("<msg")) {
+            return "[分享链接]";
+        }
+        if (msg.startsWith("{\"app") || msg.startsWith("{\"app\":")) {
+            return "[分享链接]";
+        }
         // 市场表情（超级秀/收藏表情包）
         msg = msg.replaceAll("\\[CQ:mface,[^\\]]*\\]", "[超级表情]");
         // 大表情
@@ -901,6 +898,8 @@ public class QQEvent {
         msg = msg.replaceAll("\\[CQ:video,[^\\]]*\\]", "[视频]");
         // 文件
         msg = msg.replaceAll("\\[CQ:file,[^\\]]*\\]", "[文件]");
+        // 分享链接
+        msg = msg.replaceAll("\\[CQ:share,[^\\]]*\\]", "[分享链接]");
         // 转发
         msg = msg.replaceAll("\\[CQ:forward,[^\\]]*\\]", "[合并转发]");
         // 红包
