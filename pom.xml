@@ -43,24 +43,6 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-<!--                            <relocations>-->
-<!--                                <relocation>-->
-<!--                                    <pattern>com.google.gson</pattern>-->
-<!--                                    <shadedPattern>me.regadpole.plumbot.com.google.gson</shadedPattern>-->
-<!--                                </relocation>-->
-<!--                                <relocation>-->
-<!--                                    <pattern>org.yaml.snakeyaml</pattern>-->
-<!--                                    <shadedPattern>me.regadpole.plumbot.org.yaml.snakeyaml</shadedPattern>-->
-<!--                                </relocation>-->
-<!--                                <relocation>-->
-<!--                                    <pattern>net.kyori.event</pattern>-->
-<!--                                    <shadedPattern>me.regadpole.plumbot.net.kyori.event</shadedPattern>-->
-<!--                                </relocation>-->
-<!--                                <relocation>-->
-<!--                                    <pattern>org.apache.logging.log4j</pattern>-->
-<!--                                    <shadedPattern>me.regadpole.plumbot.org.apache.logging.log4j</shadedPattern>-->
-<!--                                </relocation>-->
-<!--                            </relocations>-->
                         </configuration>
                     </execution>
                 </executions>
@@ -82,20 +64,15 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-        <repository>
-            <id>panda-repository</id>
-            <url>https://repo.panda-lang.org/releases</url>
-        </repository>
     </repositories>
 
     <dependencies>
-        <!--
         <dependency>
-            <groupId>org.bstats</groupId>
-            <artifactId>bstats-bukkit</artifactId>
-            <version>3.0.0</version>
+            <groupId>com.github.SNWCreations</groupId>
+            <artifactId>KookBC</artifactId>
+            <version>0.32.1</version>
             <scope>compile</scope>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>event-api</artifactId>
@@ -126,7 +103,6 @@
             <version>2.0.32</version>
             <scope>provided</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
