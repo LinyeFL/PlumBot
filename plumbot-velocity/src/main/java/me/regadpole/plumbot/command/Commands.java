@@ -50,11 +50,13 @@ public class Commands implements SimpleCommand {
                 if (source.hasPermission("plumbot.command")) {
                     try {
                         DatabaseManager.close();
-                        PlumBot.getBot().shutdown();
+                        if (PlumBot.getQQBot() != null) PlumBot.getQQBot().shutdown();
+                        if (PlumBot.getKookBot() != null) PlumBot.getKookBot().shutdown();
                         plugin.vconf = new VelocityConfig(plugin);
                         plugin.vconf.loadConfig();
                         DatabaseManager.start();
-                        PlumBot.getBot().start();
+                        if (PlumBot.getQQBot() != null) PlumBot.getQQBot().start();
+                        if (PlumBot.getKookBot() != null) PlumBot.getKookBot().start();
                         source.sendMessage(Component.text("配置文件已重新加载"));
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -78,13 +80,13 @@ public class Commands implements SimpleCommand {
                 }
                 if (args.length > 2) break;
                 if (args.length == 2) {
-                    if (KookBot.isKookEnabled()) {
+                    if (PlumBot.getKookBot() == null || !PlumBot.getKookBot().isKookEnabled()) {
                         source.sendMessage(Component.text("kook客户端未启动"));
                         break;
                     }
                     switch (args[1]) {
                         case "plugins":
-                            Plugin[] plugins = KookBot.getKookClient().getCore().getPluginManager().getPlugins();
+                            Plugin[] plugins = PlumBot.getKookBot().getKookClient().getCore().getPluginManager().getPlugins();
                             String result = String.format("%s (%d): %s", source instanceof ConsoleCommandSender ? "Installed and running plugins" : "已安装并正在运行的插件", plugins.length, String.join(", ", (Iterable) Arrays.stream(plugins).map((plugin) -> {
                                 return plugin.getDescription().getName();
                             }).collect(Collectors.toSet())));
