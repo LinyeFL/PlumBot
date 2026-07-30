@@ -186,9 +186,10 @@ public class ServerEvent {
         // KOOK
         Bot kookBot = PlumBot.getKookBot();
         if (kookBot != null) {
-            List<Long> kookGroups = Config.bot.KookGroups;
+            List<String> kookGroups = Config.bot.KookGroups;
             if (kookGroups != null) {
-                for (long channelID : kookGroups) {
+                for (String channelIDStr : kookGroups) {
+                    long channelID = Long.parseLong(channelIDStr);
                     kookBot.sendMsg(true, message, channelID);
                 }
             }
@@ -208,9 +209,10 @@ public class ServerEvent {
         // KOOK（直接发，暂无频道级通知开关）
         Bot kookBot = PlumBot.getKookBot();
         if (kookBot != null) {
-            List<Long> kookGroups = Config.bot.KookGroups;
+            List<String> kookGroups = Config.bot.KookGroups;
             if (kookGroups != null) {
-                for (long channelID : kookGroups) {
+                for (String channelIDStr : kookGroups) {
+                    long channelID = Long.parseLong(channelIDStr);
                     kookBot.sendMsg(true, message, channelID);
                 }
             }
