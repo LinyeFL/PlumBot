@@ -81,10 +81,10 @@ public class KookBot implements Bot {
                 );
 
         if (Config.messages.Notifications.pluginStatusEnabled) {
-            List<Long> groups = Config.bot.KookGroups;
+            List<String> groups = Config.bot.KookGroups;
             if (groups != null) {
-                for (long groupID : groups) {
-                    sendMsg(true, "PlumBot已启动", groupID);
+                for (String groupIDStr : groups) {
+                    sendMsg(true, "PlumBot已启动", Long.parseLong(groupIDStr));
                 }
             }
             if (debug) {
@@ -100,9 +100,10 @@ public class KookBot implements Bot {
     @Override
     public void shutdown() {
         if (Config.messages.Notifications.pluginStatusEnabled) {
-            List<Long> groups = Config.bot.KookGroups;
+            List<String> groups = Config.bot.KookGroups;
             if (groups != null) {
-                for (long groupID : groups) {
+                for (String groupIDStr : groups) {
+                    long groupID = Long.parseLong(groupIDStr);
                     sendChannelMessage("PlumBot已关闭", getChannel(groupID));
                 }
             }
