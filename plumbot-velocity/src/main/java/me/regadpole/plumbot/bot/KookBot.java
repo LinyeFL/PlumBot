@@ -75,7 +75,8 @@ public class KookBot implements Bot {
                 plugin.getLogger().warn("KookClient HTTP API 不可用");
             }
         } catch (Exception e) {
-            plugin.getLogger().error("KookClient 启动异常", e);
+            plugin.getLogger().error("KookClient 启动异常（KookBC OkHttp 与 Java 21 不兼容）", e);
+            return;
         }
         this.kookClient = kook;
         this.kookEnabled = true;
