@@ -865,13 +865,17 @@ public class QQEvent {
     // Bug 修复 1/2：把各类 CQ 码替换成占位文本，而非整段删除
     // 改进2：@某人改为查询群名片/昵称，签名加 bot、groupId 参数
     private String processCQCodes(String msg, QQBot bot, long groupId) {
-        msg = msg.replace("&#91;", "[").replace("&#93;", "]");
+        msg = msg.replace("&#91;", "[").replace("&#93;", "]").replace("&#44;", ",");
 
-        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"faceType") || msg.startsWith("{\"data") || msg.startsWith("\",\"faceType") || msg.startsWith("\"faceType")) {
+        if (msg.startsWith("<?xml") || msg.startsWith("<msg") || msg.startsWith("{\"app") || msg.startsWith("{\"data")) {
             return "[分享链接]";
         }
+        if (msg.startsWith("{\"faceType") || msg.startsWith("\",\"faceType") || msg.startsWith("\"faceType")) {
+            return "[超级表情]";
+        }
 
-        if (msg.contains("[CQ:music,") || (msg.contains("[CQ:json,") && msg.toLowerCase().contains("music")) || (msg.contains("[CQ:share,") && msg.toLowerCase().contains("music"))) {
+        String msgLower = msg.toLowerCase();
+        if (msg.contains("[CQ:music,") || (msg.contains("[CQ:json,") && (msgLower.contains("music") || msgLower.contains("qqmusic") || msgLower.contains("song"))) || (msg.contains("[CQ:share,") && (msgLower.contains("music") || msgLower.contains("qqmusic") || msgLower.contains("song")))) {
             return "[音乐分享]";
         }
         if (msg.contains("[CQ:json,") || msg.contains("[CQ:share,") || msg.contains("[CQ:xml,")) {
@@ -907,11 +911,10 @@ public class QQEvent {
         msg = msg.replaceAll(",\\s*file\\s*=\\s*\\];\\s*fileid\\s*=[^,;]*;\\s*rkey\\s*=[^\\],;]*\\]?", "");
         msg = msg.replaceAll(",\\s*file\\s*=\\s*\\]", "");
 
-        // 清理 CQ 表情标签外的 JSON blob：以 "faceType 或 ,"faceType 开头
+        // 清理 CQ 表情标签外的 JSON blob：{"faceType":3,...} 或 ,{"faceType":3,...}
+        msg = msg.replaceAll("(?:,\\s*)?\\{\"faceType\"\\s*:\\s*\\d+(?:,\"[^\"]+\"\\s*:\\s*(?:\"[^\"]*\"|\\d+|null|true|false))*\\}", "[超级表情]");
+        // 清理不带花括号的版本：,"faceType":3,... 或 "faceType":3,...
         msg = msg.replaceAll("(?:,\\s*)?\"faceType\"\\s*:\\s*\\d+(?:,\"[^\"]+\"\\s*:\\s*(?:\"[^\"]*\"|\\d+|null|true|false))*", "[超级表情]");
-
-        // 修复 HTML 实体
-        msg = msg.replace("&#44;", ",");
 
         // 扩展键值对清理：增加 key / emoji_id / emoji_package_id / file_size / url 等
         String stripped = msg.replaceAll(
@@ -935,6 +938,19 @@ public class QQEvent {
         stripped = stripped.replaceAll("^[,\\s;]+", "");
         stripped = stripped.replaceAll("[,\\s;]+$", "");
         stripped = stripped.trim();
+
+        // 精准兜底：仅清理 QQ 图片特有的长 base64 fileid/rkey（50字符以上，避免误伤正常URL参数）
+        if (stripped.matches(".*[;,]?\\s*fileid\\s*=\\s*[A-Za-z0-9_+/=]{50,}.*") || stripped.matches(".*\\brkey\\s*=\\s*[A-Za-z0-9_+/=]{30,}.*")) {
+            stripped = stripped
+                .replaceAll(",?\\s*file\\s*=\\s*\\]?\\s*;?", "")
+                .replaceAll("\\bfileid\\s*=\\s*[A-Za-z0-9_+/=-]{50,}", "")
+                .replaceAll("\\brkey\\s*=\\s*[A-Za-z0-9_+/=-]{30,}", "")
+                .replaceAll("[,;\\s]+", " ")
+                .trim();
+            if (stripped.isEmpty() || stripped.equals("[图片]")) {
+                return "[图片]";
+            }
+        }
 
         // 兜底：残留纯 JSON 花括号结构 → 占位符
         if (stripped.matches("\\s*\\{[^{}]*\"(?:faceType|packId|stickerId|sourceType|stickerType|randomType|msgType|app|config|meta|data)[^{}]*\\}\\s*")) {
