@@ -64,7 +64,19 @@ public class KookBot implements Bot {
                 "websocket"
         );
 
-        kook.start();
+        try {
+            kook.start();
+            plugin.getLogger().info("KookClient start() 调用完成");
+            
+            // 检查连接状态
+            if (kook.getCore().getHttpAPI() != null) {
+                plugin.getLogger().info("KookClient HTTP API 可用");
+            } else {
+                plugin.getLogger().warn("KookClient HTTP API 不可用");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().error("KookClient 启动异常", e);
+        }
         this.kookClient = kook;
         this.kookEnabled = true;
 
