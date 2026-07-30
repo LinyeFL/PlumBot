@@ -36,6 +36,9 @@ public class QQEvent {
     private static final Map<String, ReplyInfo> replyCache = new ConcurrentHashMap<>();
     private static final long REPLY_CACHE_TTL_MS = 5 * 60 * 1000;
 
+    // 原始消息调试模式开关
+    private static boolean debugRawMode = false;
+
     public static class ReplyInfo {
         private final long groupId;
         private final long qqUserId;
@@ -226,6 +229,11 @@ public class QQEvent {
                 StringTool.filterColor(
                         forwardingMessage
                 );
+
+        // 调试模式：输出原始消息到控制台
+        if (debugRawMode) {
+            PlumBot.INSTANCE.getLogger().info("[DEBUG-RAW] 群消息原文: " + filteredMessage);
+        }
 
         // Bug 修复 1/2：把 CQ 码替换成占位文本而非删除
         filteredMessage =
@@ -441,6 +449,9 @@ public class QQEvent {
                     "/删除白名单 删除自己的白名单"
             );
             helpMessages.add("管理命令:");
+            helpMessages.add(
+                    "/debugraw 开关原始消息调试模式（仅管理员）"
+            );
             helpMessages.add(
                     "/删除白名单 <ID> 删除指定游戏id的白名单"
             );
@@ -688,6 +699,12 @@ public class QQEvent {
             long groupId,
             long senderId
     ) {
+        if (message.equals("/debugraw") && Config.bot.Admins.contains(senderId)) {
+            debugRawMode = !debugRawMode;
+            bot.sendMsg(true, "原始消息调试模式：" + (debugRawMode ? "§a开启" : "§c关闭"), groupId);
+            return true;
+        }
+
         boolean isForwardCmd =
                 message.equals("/转发 开") || message.equals("/转发 关");
         boolean isNotifyCmd =
