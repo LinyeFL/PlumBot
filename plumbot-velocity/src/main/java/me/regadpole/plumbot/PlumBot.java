@@ -41,6 +41,8 @@ public class PlumBot {
     private final Metrics.Factory metricsFactory;
     public VelocityConfig vconf;
     private static Bot bot;
+    private static QQBot qqBot;
+    private static KookBot kookBot;
     private static Environment environment;
 
     public static PlumBot INSTANCE;
@@ -72,8 +74,6 @@ public class PlumBot {
         logger.info("It's a plugin for Minecraft!");
     }
 
-
-
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         DatabaseManager.start();
@@ -90,21 +90,24 @@ public class PlumBot {
                 () -> new IllegalArgumentException("The provided instance is not a plugin"));
 
         getServer().getScheduler().buildTask(this, () -> {
-            switch (Config.bot.Bot.Mode) {
-                case "go-cqhttp":
-                    bot = new QQBot(INSTANCE);
-                    bot.start();
-                    getLogger().info("已启动go-cqhttp服务");
-                    break;
-                case "kook":
-                    bot = new KookBot(this);
-                    bot.start();
-                    KookBot.setKookEnabled(true);
-                    getLogger().info("已启动kook服务");
-                    break;
-                default:
-                    getLogger().warn("无法启动服务，请检查配置文件");
-                    break;
+            String mode = Config.bot.Bot.Mode;
+            boolean qqMode = mode.equals("go-cqhttp") || mode.equals("both");
+            boolean kookMode = mode.equals("kook") || mode.equals("both");
+
+            if (qqMode) {
+                qqBot = new QQBot(INSTANCE);
+                qqBot.start();
+                bot = qqBot;
+                getLogger().info("已启动go-cqhttp服务");
+            }
+            if (kookMode) {
+                kookBot = new KookBot(this);
+                kookBot.start();
+                if (bot == null) bot = kookBot;
+                getLogger().info("已启动kook服务");
+            }
+            if (!qqMode && !kookMode) {
+                getLogger().warn("无法启动服务，请检查配置文件");
             }
         }).schedule();
 
@@ -117,24 +120,20 @@ public class PlumBot {
         environment = new Environment();
         logger.info("PlumBot 已启动");
 
-
     }
 
     @Subscribe(order = PostOrder.FIRST)
     public void onProxyShutdown(ProxyShutdownEvent event) {
-
-        switch (Config.bot.Bot.Mode) {
-            case "go-cqhttp":
-                bot.shutdown();
-                getLogger().info("已关闭go-cqhttp服务");
-                break;
-            case "kook":
-                bot.shutdown();
-                getLogger().info("已关闭kook服务");
-                break;
-            default:
-                getLogger().warn("无法正常关闭服务，将在服务器关闭后强制关闭");
-                break;
+        if (qqBot != null) {
+            qqBot.shutdown();
+            getLogger().info("已关闭go-cqhttp服务");
+        }
+        if (kookBot != null) {
+            kookBot.shutdown();
+            getLogger().info("已关闭kook服务");
+        }
+        if (qqBot == null && kookBot == null) {
+            getLogger().warn("无法正常关闭服务，将在服务器关闭后强制关闭");
         }
         DatabaseManager.close();
         getLogger().info("PlumBot已关闭");
@@ -157,6 +156,14 @@ public class PlumBot {
 
     public static Bot getBot() {
         return bot;
+    }
+
+    public static QQBot getQQBot() {
+        return qqBot;
+    }
+
+    public static KookBot getKookBot() {
+        return kookBot;
     }
 
     public static Database getDatabase() {
