@@ -15,7 +15,7 @@ import sdk.event.message.GroupMessage;
 import sdk.event.message.PrivateMessage;
 import sdk.client.response.GroupMemberInfo;
 import sdk.event.notice.GroupDecreaseNotice;
- 
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,7 +112,7 @@ public class QQEvent {
             }
         }
 
-        PlumBot.getBot().sendMsg(
+        PlumBot.getQQBot().sendMsg(
                 false,
                 String.join("\n", lines),
                 event.getUserId()
@@ -122,7 +122,8 @@ public class QQEvent {
     public void onGroupMessageReceive(
             GroupMessage event
     ) {
-        QQBot bot = (QQBot) PlumBot.getBot();
+        QQBot bot = PlumBot.getQQBot();
+        if (bot == null) return;
 
         String message = event.getMessage();
         long groupId = event.getGroupId();
@@ -288,7 +289,7 @@ public class QQEvent {
                             );
 
             if (playerName.isEmpty()) {
-                PlumBot.getBot().sendMsg(
+                bot.sendMsg(
                         true,
                         "id不能为空",
                         groupId
@@ -313,8 +314,7 @@ public class QQEvent {
                                                 );
 
                                 if (boundId == 0L) {
-                                    PlumBot.getBot()
-                                            .sendMsg(
+                                    bot.sendMsg(
                                                     true,
                                                     "尚未申请白名单",
                                                     groupId
@@ -331,7 +331,7 @@ public class QQEvent {
                                                 PlumBot.getDatabase()
                                         );
 
-                                PlumBot.getBot().sendMsg(
+                                bot.sendMsg(
                                         true,
                                         "成功移出白名单",
                                         groupId
@@ -467,7 +467,7 @@ public class QQEvent {
                     "/通知 开|关 开关本群进出游戏通知"
             );
 
-            PlumBot.getBot().sendMsg(
+            PlumBot.getQQBot().sendMsg(
                     true,
                     String.join("\n", helpMessages),
                     groupId
@@ -508,7 +508,7 @@ public class QQEvent {
                 }
             }
 
-            PlumBot.getBot().sendMsg(
+            PlumBot.getQQBot().sendMsg(
                     true,
                     String.join("\n", lines),
                     groupId
@@ -525,7 +525,7 @@ public class QQEvent {
 
         if (applyMatcher.find()) {
             if (!Config.config.WhiteList.enable) {
-                PlumBot.getBot().sendMsg(true, "白名单功能未开启", groupId);
+                PlumBot.getQQBot().sendMsg(true, "白名单功能未开启", groupId);
                 return true;
             }
 
@@ -538,7 +538,7 @@ public class QQEvent {
                             );
 
             if (playerName.isEmpty()) {
-                PlumBot.getBot().sendMsg(
+                PlumBot.getQQBot().sendMsg(
                         true,
                         "id不能为空",
                         groupId
@@ -575,7 +575,7 @@ public class QQEvent {
 
                                 if (boundName != null
                                         || boundId != 0L) {
-                                    PlumBot.getBot()
+                                    PlumBot.getQQBot()
                                             .sendMsg(
                                                     true,
                                                     "绑定失败",
@@ -593,7 +593,7 @@ public class QQEvent {
                                         PlumBot.getDatabase()
                                 );
 
-                                PlumBot.getBot().sendMsg(
+                                PlumBot.getQQBot().sendMsg(
                                         true,
                                         "成功申请白名单",
                                         groupId
@@ -610,7 +610,7 @@ public class QQEvent {
         }
 
         if (!Config.config.WhiteList.enable) {
-            PlumBot.getBot().sendMsg(true, "白名单功能未开启", groupId);
+            PlumBot.getQQBot().sendMsg(true, "白名单功能未开启", groupId);
             return true;
         }
 
@@ -633,7 +633,7 @@ public class QQEvent {
 
                             if (playerName == null
                                     || playerName.isEmpty()) {
-                                PlumBot.getBot()
+                                PlumBot.getQQBot()
                                         .sendMsg(
                                                 true,
                                                 "您尚未申请白名单",
@@ -650,7 +650,7 @@ public class QQEvent {
                                     PlumBot.getDatabase()
                             );
 
-                            PlumBot.getBot().sendMsg(
+                            PlumBot.getQQBot().sendMsg(
                                     true,
                                     "成功移出白名单",
                                     groupId
@@ -683,7 +683,7 @@ public class QQEvent {
             return false;
         }
 
-        PlumBot.getBot().sendMsg(
+        PlumBot.getQQBot().sendMsg(
                 true,
                 String.valueOf(reply),
                 groupId
@@ -985,7 +985,7 @@ public class QQEvent {
         }
         return msg;
     }
- 
+
     // 改进2：替换 @某人 CQ 码，三级回退：群名片 → 昵称 → QQ号
     private String replaceAtMentions(String msg, QQBot bot, long groupId) {
         java.util.regex.Pattern atPattern = java.util.regex.Pattern.compile("\\[CQ:at,qq=(\\d+)[^\\]]*\\]");
