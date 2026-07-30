@@ -48,17 +48,10 @@
         </dependency>
  
         <dependency>
-            <groupId>com.github.SNWCreations</groupId>
+            <groupId>io.github.snwcreations</groupId>
             <artifactId>KookBC</artifactId>
-            <version>0.33.0-local</version>
+            <version>0.33.0</version>
             <scope>compile</scope>
-        </dependency>
-
-        <!-- OkHttp 4.12.0 覆盖 KookBC 旧版，修复 Java 21 兼容性 -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
         </dependency>
     </dependencies>
  
