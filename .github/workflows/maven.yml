@@ -33,7 +33,7 @@ jobs:
         git clone --depth 1 https://github.com/SNWCreations/KookBC.git
         cd KookBC
         chmod +x gradlew
-        ./gradlew publishToMavenLocal --no-daemon
+        ./gradlew publishToMavenLocal --no-daemon -x signMavenPublication
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
