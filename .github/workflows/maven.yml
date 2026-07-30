@@ -28,8 +28,12 @@ jobs:
         java-version: '21'
         distribution: 'zulu'
         cache: maven
-    - name: Install local KookBC to Maven repo
-      run: mvn install:install-file -Dfile=libs/kookbc-0.33.0.jar -DgroupId=com.github.SNWCreations -DartifactId=KookBC -Dversion=0.33.0-local -Dpackaging=jar
+    - name: Clone and build KookBC from master
+      run: |
+        git clone --depth 1 https://github.com/SNWCreations/KookBC.git
+        cd KookBC
+        chmod +x gradlew
+        ./gradlew publishToMavenLocal --no-daemon
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
