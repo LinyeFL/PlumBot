@@ -22,10 +22,12 @@ public class Config {
 
             public static class kook {
                 public static String Token;
+                public static boolean Debug;
             }
         }
 
         public static List<Long> Groups;
+        public static List<String> KookGroups;
         public static List<Long> Admins;
     }
 
