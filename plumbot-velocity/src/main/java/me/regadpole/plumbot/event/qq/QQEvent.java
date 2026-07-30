@@ -877,6 +877,12 @@ public class QQEvent {
     private String processCQCodes(String msg, QQBot bot, long groupId) {
         // HTML 实体解码（go-cqhttp 将 [] 编码为 &#91;/&#93; 防止和 CQ 码冲突）
         msg = msg.replace("&#91;", "[").replace("&#93;", "]");
+        // 市场表情（超级秀/收藏表情包）
+        msg = msg.replaceAll("\\[CQ:mface,[^\\]]*\\]", "[超级表情]");
+        // 大表情
+        msg = msg.replaceAll("\\[CQ:bface,[^\\]]*\\]", "[表情]");
+        // 小表情
+        msg = msg.replaceAll("\\[CQ:sface,[^\\]]*\\]", "[表情]");
         // 图片
         msg = msg.replaceAll("\\[CQ:image,[^\\]]*\\]", "[图片]");
         // 表情
@@ -905,6 +911,8 @@ public class QQEvent {
         msg = msg.replaceAll("\\[CQ:json,[^\\]]*\\]", "[卡片]");
         // XML 消息
         msg = msg.replaceAll("\\[CQ:xml,[^\\]]*\\]", "[XML]");
+        // 清理泄漏的表情/贴纸元数据
+        msg = cleanupStickerMetadata(msg);
         // 其他未识别的 CQ 码，直接删除
         msg = msg.replaceAll("\\[CQ:[^\\]]*\\]", "");
         // 清理图片消息泄露的元数据（非贪婪，不伤后面文字）
@@ -912,6 +920,23 @@ public class QQEvent {
         return msg;
     }
 
+     // 清理超级秀/收藏表情在 CQ 码外附带的泄漏元数据
+    private String cleanupStickerMetadata(String msg) {
+        // 超级秀表情泄漏：faceType:3,packId:4,stickerId:76,...
+        msg = msg.replaceAll(
+            "(?:^|,\\s*)(?:faceType|packId|stickerId|resultId|sourceType|stickerType|pokeType|spokeSummary|doubleHit|emojiId|emojiPackageId|summary):[^,\\[\\]]+(?:,\\s*)?",
+            ""
+        );
+        // 收藏表情泄漏：file=...&url=...&emo_ji_id=...
+        msg = msg.replaceAll(
+            "(?:^|&)(?:file|url|emo_ji_id|emoji_package_id)=[^&\\[\\]]+(?:&)?",
+            ""
+        );
+        msg = msg.replaceAll("^,\\s*", "");
+        msg = msg.replaceAll(",\\s*,", ",");
+        return msg.trim();
+    }
+ 
     // 改进2：替换 @某人 CQ 码，三级回退：群名片 → 昵称 → QQ号
     private String replaceAtMentions(String msg, QQBot bot, long groupId) {
         java.util.regex.Pattern atPattern = java.util.regex.Pattern.compile("\\[CQ:at,qq=(\\d+)[^\\]]*\\]");
