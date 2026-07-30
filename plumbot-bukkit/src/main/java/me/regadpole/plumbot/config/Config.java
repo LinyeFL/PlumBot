@@ -5,6 +5,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import org.bukkit.configuration.ConfigurationSection;
 
 public class Config {
     private static final PlumBot INSTANCE = PlumBot.INSTANCE;
@@ -48,7 +52,7 @@ public class Config {
             INSTANCE.saveResource(commandsFile.getName(), true);
         }
         if (!Config.getReturnsYamlVersion().equals("1.2")){
-            INSTANCE.saveResource(configFile.getName(), true);
+            INSTANCE.saveResource(returnsFile.getName(), true);
         }
     }
 
@@ -106,6 +110,25 @@ public class Config {
         return getBotYaml().getString("Bot.Kook.Token");
     }
 
+    /** 返回名称→频道ID的映射 */
+    public static Map<String, Long> getKookGroups() {
+        ConfigurationSection section = getBotYaml().getConfigurationSection("KookGroups");
+        Map<String, Long> result = new LinkedHashMap<>();
+        if (section == null) return result;
+        for (String key : section.getKeys(false)) {
+            result.put(key, section.getLong(key));
+        }
+        return result;
+    }
+
+    public static List<Long> getKookGroupIds() {
+        return new ArrayList<>(getKookGroups().values());
+    }
+
+    public static boolean getKookDebug() {
+        return getBotYaml().getBoolean("Bot.Kook.Debug", false);
+    }
+    
     public static List<Long> getGroupQQs(){
         return getBotYaml().getLongList("Groups");
     }
