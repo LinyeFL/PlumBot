@@ -32,21 +32,20 @@ import static me.regadpole.plumbot.PlumBot.INSTANCE;
 
 public class KookBot implements Bot {
 
+    private final PlumBot plugin;
+    private KBCClient kookClient;
+    private boolean kookEnabled = false;
+    private boolean debug;
+
     public KookBot(PlumBot plugin) {
         this.plugin = plugin;
+        this.debug = Config.bot.Bot.kook.Debug;
     }
-
-    public PlumBot plugin;
-
-    private static KBCClient kookClient;
-    private static KookBot kookBot;
-    private static boolean kookEnabled = false;
 
     @Override
     public void start() {
         CoreImpl kookcore;
-        File kookFolder =
-                new File(INSTANCE.getDataFolder(), "kook");
+        File kookFolder = new File(INSTANCE.getDataFolder(), "kook");
         ConfigurationSection config;
         File kookPlugins;
         KBCClient kook;
@@ -54,10 +53,7 @@ public class KookBot implements Bot {
         kookcore = new CoreImpl();
         JKook.setCore(kookcore);
 
-        config = YamlConfiguration.loadConfiguration(
-                new File(kookFolder, "kbc.yml")
-        );
-
+        config = YamlConfiguration.loadConfiguration(new File(kookFolder, "kbc.yml"));
         kookPlugins = new File(kookFolder, "plugins");
 
         kook = new KookClient(
@@ -69,8 +65,13 @@ public class KookBot implements Bot {
         );
 
         kook.start();
-        kookClient = kook;
-        kookBot = new KookBot(plugin);
+        this.kookClient = kook;
+        this.kookEnabled = true;
+
+        if (debug) {
+            plugin.getLogger().info("[KookBot] Kook 客户端已启动，Token 长度: " + Config.bot.Bot.kook.Token.length());
+            plugin.getLogger().info("[KookBot] 已注册事件监听器");
+        }
 
         kook.getCore()
                 .getEventManager()
@@ -79,210 +80,121 @@ public class KookBot implements Bot {
                         new KookEvent(this, plugin)
                 );
 
-        if (Config.messages.Notifications
-                .pluginStatusEnabled) {
-
-            List<Long> groups = Config.bot.Groups;
-
-            for (long groupID : groups) {
-                PlumBot.getBot().sendMsg(
-                        true,
-                        "PlumBot已启动",
-                        groupID
-                );
+        if (Config.messages.Notifications.pluginStatusEnabled) {
+            List<Long> groups = Config.bot.KookGroups;
+            if (groups != null) {
+                for (long groupID : groups) {
+                    sendMsg(true, "PlumBot已启动", groupID);
+                }
             }
+            if (debug) {
+                plugin.getLogger().info("[KookBot] 已发送启动通知到 " + (groups != null ? groups.size() : 0) + " 个 KOOK 频道");
+            }
+        }
+
+        if (debug) {
+            plugin.getLogger().info("[KookBot] KookBot 启动完成");
         }
     }
 
     @Override
     public void shutdown() {
-        if (Config.messages.Notifications
-                .pluginStatusEnabled) {
-
-            List<Long> groups = Config.bot.Groups;
-
-            for (long groupID : groups) {
-                sendChannelMessage(
-                        "PlumBot已关闭",
-                        getChannel(groupID)
-                );
+        if (Config.messages.Notifications.pluginStatusEnabled) {
+            List<Long> groups = Config.bot.KookGroups;
+            if (groups != null) {
+                for (long groupID : groups) {
+                    sendChannelMessage("PlumBot已关闭", getChannel(groupID));
+                }
             }
         }
-
         kookClient.shutdown();
+        kookEnabled = false;
+        if (debug) {
+            plugin.getLogger().info("[KookBot] KookBot 已关闭");
+        }
     }
 
     @Override
-    public void sendMsg(
-            boolean isGroup,
-            String message,
-            long id
-    ) {
-        if (id == 0L) {
-            return;
+    public void sendMsg(boolean isGroup, String message, long id) {
+        if (id == 0L) return;
+        if ("".equals(message)) return;
+
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            if (isGroup) {
+                sendChannelMessage(message, getChannel(id));
+            } else {
+                sendPrivateMessage(message, getUser(id));
+            }
+        }).schedule();
+    }
+
+    public void sendMsg(boolean isGroup, BaseComponent message, long id) {
+        if (id == 0L) return;
+        if (message.toString().isEmpty()) return;
+
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            if (isGroup) {
+                sendChannelMessage(message, getChannel(id));
+            } else {
+                sendPrivateMessage(message, getUser(id));
+            }
+        }).schedule();
+    }
+
+    public void sendChannelReply(ChannelMessageEvent event, String message) {
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            event.getMessage().reply(message);
+        }).schedule();
+    }
+
+    public void sendPrivateReply(PrivateMessageReceivedEvent event, String message) {
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            event.getMessage().reply(message);
+        }).schedule();
+    }
+
+    public void sendPrivateFileReply(PrivateMessageReceivedEvent event, String path) {
+        List<ImageElement> list = new ArrayList<>();
+        list.add(new ImageElement(createFile(path), "", false));
+        MultipleCardComponent card = new CardBuilder()
+                .setTheme(Theme.PRIMARY)
+                .setSize(Size.LG)
+                .addModule(new ContainerModule(list))
+                .build();
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            event.getMessage().reply(card);
+        }).schedule();
+    }
+
+    public void sendChannelFileReply(ChannelMessageEvent event, String path) {
+        List<ImageElement> list = new ArrayList<>();
+        list.add(new ImageElement(createFile(path), "", false));
+        MultipleCardComponent card = new CardBuilder()
+                .setTheme(Theme.PRIMARY)
+                .setSize(Size.LG)
+                .addModule(new ContainerModule(list))
+                .build();
+        plugin.getServer().getScheduler().buildTask(plugin, () -> {
+            event.getMessage().reply(card);
+        }).schedule();
+    }
+
+    private void sendChannelMessage(String message, TextChannel channel) {
+        channel.sendComponent(message);
+        if (debug) {
+            plugin.getLogger().info("[KookBot] → 频道 " + channel.getName() + ": " + message.substring(0, Math.min(80, message.length())));
         }
-
-        if ("".equals(message)) {
-            return;
-        }
-
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    if (isGroup) {
-                        sendChannelMessage(
-                                message,
-                                getChannel(id)
-                        );
-                    } else {
-                        sendPrivateMessage(
-                                message,
-                                getUser(id)
-                        );
-                    }
-                })
-                .schedule();
     }
 
-    public void sendMsg(
-            boolean isGroup,
-            BaseComponent message,
-            long id
-    ) {
-        if (id == 0L) {
-            return;
-        }
-
-        if (message.toString().isEmpty()) {
-            return;
-        }
-
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    if (isGroup) {
-                        sendChannelMessage(
-                                message,
-                                getChannel(id)
-                        );
-                    } else {
-                        sendPrivateMessage(
-                                message,
-                                getUser(id)
-                        );
-                    }
-                });
-    }
-
-    public void sendChannelReply(
-            ChannelMessageEvent event,
-            String message
-    ) {
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    event.getMessage().reply(message);
-                });
-    }
-
-    public void sendPrivateReply(
-            PrivateMessageReceivedEvent event,
-            String message
-    ) {
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    event.getMessage().reply(message);
-                });
-    }
-
-    public void sendPrivateFileReply(
-            PrivateMessageReceivedEvent event,
-            String path
-    ) {
-        List<ImageElement> list =
-                new ArrayList<>();
-
-        list.add(
-                new ImageElement(
-                        createFile(path),
-                        "",
-                        false
-                )
-        );
-
-        MultipleCardComponent card =
-                new CardBuilder()
-                        .setTheme(Theme.PRIMARY)
-                        .setSize(Size.LG)
-                        .addModule(
-                                new ContainerModule(list)
-                        )
-                        .build();
-
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    event.getMessage().reply(card);
-                });
-    }
-
-    public void sendChannelFileReply(
-            ChannelMessageEvent event,
-            String path
-    ) {
-        List<ImageElement> list =
-                new ArrayList<>();
-
-        list.add(
-                new ImageElement(
-                        createFile(path),
-                        "",
-                        false
-                )
-        );
-
-        MultipleCardComponent card =
-                new CardBuilder()
-                        .setTheme(Theme.PRIMARY)
-                        .setSize(Size.LG)
-                        .addModule(
-                                new ContainerModule(list)
-                        )
-                        .build();
-
-        plugin.getServer()
-                .getScheduler()
-                .buildTask(plugin, () -> {
-                    event.getMessage().reply(card);
-                });
-    }
-
-    private void sendChannelMessage(
-            String message,
-            TextChannel channel
-    ) {
+    private void sendChannelMessage(BaseComponent message, TextChannel channel) {
         channel.sendComponent(message);
     }
 
-    private void sendChannelMessage(
-            BaseComponent message,
-            TextChannel channel
-    ) {
-        channel.sendComponent(message);
-    }
-
-    private void sendPrivateMessage(
-            String message,
-            User user
-    ) {
+    private void sendPrivateMessage(String message, User user) {
         user.sendPrivateMessage(message);
     }
 
-    private void sendPrivateMessage(
-            BaseComponent message,
-            User user
-    ) {
+    private void sendPrivateMessage(BaseComponent message, User user) {
         user.sendPrivateMessage(message);
     }
 
@@ -297,61 +209,31 @@ public class KookBot implements Bot {
     }
 
     public TextChannel getChannel(long groupId) {
-        return (TextChannel) kookClient
-                .getCore()
-                .getHttpAPI()
-                .getChannel(
-                        String.valueOf(groupId)
-                );
+        return (TextChannel) kookClient.getCore().getHttpAPI().getChannel(String.valueOf(groupId));
     }
 
     public User getUser(long id) {
-        return kookClient
-                .getCore()
-                .getHttpAPI()
-                .getUser(
-                        String.valueOf(id)
-                );
+        return kookClient.getCore().getHttpAPI().getUser(String.valueOf(id));
     }
 
     @Override
-    public boolean checkUserInGroup(
-            long userId,
-            long groupId
-    ) {
-        PageIterator<Set<User>> iterator =
-                getChannel(groupId)
-                        .getGuild()
-                        .getUsers();
-
+    public boolean checkUserInGroup(long userId, long groupId) {
+        PageIterator<Set<User>> iterator = getChannel(groupId).getGuild().getUsers();
         while (iterator.hasNext()) {
             for (User user : iterator.next()) {
-                if (user.getId().equalsIgnoreCase(
-                        String.valueOf(userId)
-                )) {
+                if (user.getId().equalsIgnoreCase(String.valueOf(userId))) {
                     return true;
                 }
             }
         }
-
         return false;
     }
 
-    public static KBCClient getKookClient() {
+    public KBCClient getKookClient() {
         return kookClient;
     }
 
-    public static void setKookEnabled(
-            boolean kook
-    ) {
-        kookEnabled = kook;
-    }
-
-    public static boolean isKookEnabled() {
+    public boolean isKookEnabled() {
         return kookEnabled;
-    }
-
-    public static KookBot getKookBot() {
-        return kookBot;
     }
 }
